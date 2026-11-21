@@ -555,7 +555,7 @@ MODULES.push({
   chartHtml:`<h3><span class="dot"></span>Frequency response & waveforms</h3><div class="chartwrap"><canvas id="ch1"></canvas></div><div class="chartwrap"><canvas id="ch2"></canvas></div>`,
   actions:[{label:'Tune to resonance f = f₀',fn(v,api){ const f0=1/(2*PI*Math.sqrt(v.L*1e-3*v.C*1e-6)); api.set('f',+f0.toFixed(3)); }}],
   calc(v){
-    const L=v.L*1e-3,C=v.C*1e-6,w=2*PI*v.f,XL=w*L,XC=1/(w*C),X=XL-XC,Z=Math.hypot(v.R,X),phi=Math.atan2(X,v.R),I=v.V/Z;
+    const L=v.L*1e-3,C=v.C*1e-6,w=2*PI*v.f,XL=w*L,XC=1/(w*C),X=Math.abs(XL-XC)<1e-4*XL?0:XL-XC,Z=Math.hypot(v.R,X),phi=Math.atan2(X,v.R),I=v.V/Z;
     const f0=1/(2*PI*Math.sqrt(L*C)),Q=Math.sqrt(L/C)/v.R,BW=v.R/(2*PI*L);
     const a=v.R/(2*L), w0=1/Math.sqrt(L*C), f1=(-a+Math.sqrt(a*a+w0*w0))/(2*PI), f2=(a+Math.sqrt(a*a+w0*w0))/(2*PI);
     return {L,C,w,XL,XC,X,Z,phi,I,VR:I*v.R,VL:I*XL,VC:I*XC,P:I*I*v.R,Qr:I*I*X,S:v.V*I,pf:Math.cos(phi),f0,Q,BW,f1,f2};
