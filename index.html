@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BEE Virtual Lab — Interactive Basic Electrical Engineering Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b1020; --bg2:#10172b; --card:#141c33; --card2:#1a2440; --line:#26314f;
+  --text:#e6ebf5; --muted:#8d99b8; --amber:#ffb84d; --cyan:#4fd1e8; --green:#5be49b;
+  --pink:#ff6b9a; --violet:#a78bfa; --red:#ff6b6b;
+  --wire:#9fb0d6;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+  --sans:'Space Grotesk',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.5;
+  background-image:radial-gradient(circle at 1px 1px,#1a2340 1px,transparent 0);background-size:22px 22px}
+a{color:var(--cyan)}
+.app{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
+nav.side{background:rgba(11,16,32,.92);border-right:1px solid var(--line);padding:18px 12px;position:sticky;top:0;height:100vh;overflow:auto;backdrop-filter:blur(6px)}
+.brand{display:flex;gap:10px;align-items:center;padding:4px 8px 18px;cursor:pointer}
+.brand .logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--amber),var(--pink));display:grid;place-items:center;color:#1a1020;font-weight:700}
+.brand b{display:block;font-size:17px;letter-spacing:.2px}
+.brand small{color:var(--muted);font-size:12px}
+.navgrp{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1.4px;margin:14px 10px 6px}
+.navlink{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:9px;color:var(--text);text-decoration:none;font-size:14px;cursor:pointer;border:1px solid transparent}
+.navlink:hover{background:var(--card)}
+.navlink.on{background:var(--card2);border-color:var(--line);box-shadow:inset 3px 0 0 var(--amber)}
+.navlink .ic{width:22px;text-align:center;color:var(--amber);font-family:var(--mono);font-size:13px}
+main{padding:26px 30px 60px;max-width:1400px;width:100%}
+.menu-btn{display:none}
+h1,h2,h3{margin:0;font-weight:600}
+.mhead{display:flex;justify-content:space-between;gap:20px;align-items:flex-end;margin-bottom:18px;flex-wrap:wrap}
+.mhead h2{font-size:28px}
+.mhead .tag{color:var(--amber);font-family:var(--mono);font-size:12px;letter-spacing:1px;text-transform:uppercase}
+.mhead p{color:var(--muted);margin:6px 0 0;max-width:780px}
+.card{background:linear-gradient(180deg,var(--card),#121a30);border:1px solid var(--line);border-radius:14px;padding:16px}
+.card h3{font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card h3 .dot{width:8px;height:8px;border-radius:50%;background:var(--amber)}
+.g-top{display:grid;grid-template-columns:330px 1fr;gap:16px;margin-bottom:16px}
+.g-bot{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+.ctl{display:flex;flex-direction:column;gap:12px}
+.prm label{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:4px}
+.prm label b{color:var(--text);font-weight:500}
+.prm .row{display:flex;gap:8px;align-items:center}
+.prm input[type=range]{flex:1;accent-color:var(--amber);height:4px}
+.prm input[type=number]{width:86px;background:var(--bg2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:5px 7px;font-family:var(--mono);font-size:13px}
+.prm input[type=number]:focus,.prm select:focus{outline:1px solid var(--amber)}
+.prm .u{color:var(--muted);font-size:12px;width:34px;font-family:var(--mono)}
+.prm select{width:100%;background:var(--bg2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:7px;font-family:var(--sans);font-size:14px}
+.prm.hide{display:none}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.btn{background:var(--card2);border:1px solid var(--line);color:var(--text);padding:7px 12px;border-radius:8px;cursor:pointer;font-family:var(--sans);font-size:13px}
+.btn:hover{border-color:var(--amber)}
+.btn.pri{background:var(--amber);color:#1b1407;border-color:var(--amber);font-weight:600}
+.tabs{display:flex;gap:4px;background:var(--bg2);padding:3px;border-radius:9px;border:1px solid var(--line);flex-wrap:wrap}
+.tabs button{background:none;border:0;color:var(--muted);padding:5px 10px;border-radius:7px;cursor:pointer;font-family:var(--sans);font-size:13px}
+.tabs button.on{background:var(--card2);color:var(--text);box-shadow:0 0 0 1px var(--line)}
+.vizhead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.viz svg{width:100%;height:auto;display:block}
+.results{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.res{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.res small{color:var(--muted);font-size:12px;display:block}
+.res b{font-family:var(--mono);font-size:18px;font-weight:500}
+.res.hl{border-color:rgba(255,184,77,.55);background:linear-gradient(180deg,rgba(255,184,77,.10),var(--bg2))}
+.res.hl b{color:var(--amber)}
+.res.ok b{color:var(--green)}
+.res.warn{border-color:rgba(255,107,107,.6)} .res.warn b{color:var(--red)}
+ol.steps{margin:0;padding:0;list-style:none;counter-reset:s}
+ol.steps li{counter-increment:s;position:relative;padding:0 0 14px 38px;border-left:1px dashed var(--line);margin-left:12px}
+ol.steps li:last-child{border-left-color:transparent}
+ol.steps li::before{content:counter(s);position:absolute;left:-13px;top:0;width:26px;height:26px;border-radius:50%;background:var(--card2);border:1px solid var(--amber);color:var(--amber);display:grid;place-items:center;font-size:12px;font-family:var(--mono)}
+ol.steps .t{font-weight:500;margin-bottom:4px;padding-top:2px}
+ol.steps .f{font-family:var(--mono);font-size:12.5px;color:#c9d4ee;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;white-space:pre-wrap;overflow-x:auto}
+canvas{width:100%;height:270px;display:block}
+.chartwrap+.chartwrap{margin-top:14px}
+.note{font-size:12.5px;color:var(--muted);margin-top:8px}
+.theory{margin-top:16px}
+.theory summary{cursor:pointer;font-weight:500}
+.theory .f{font-family:var(--mono);font-size:13px;color:#c9d4ee;margin-top:10px;white-space:pre-wrap;line-height:1.7}
+table.tb{width:100%;border-collapse:collapse;font-size:13.5px}
+table.tb th,table.tb td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
+table.tb th{color:var(--muted);font-weight:500}
+table.tb td{font-family:var(--mono)}
+/* svg */
+.w{fill:none;stroke:var(--wire);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.cmp{fill:none;stroke:var(--text);stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+.cmp.load{stroke:var(--green)}
+.cmp.hot{stroke:var(--amber)}
+.src{fill:var(--bg2);stroke:var(--cyan);stroke-width:2.2}
+.st{fill:var(--text);font-family:var(--sans);font-size:14px}
+.sv{fill:var(--amber);font-family:var(--mono);font-size:12px}
+.sm{fill:var(--muted);font-family:var(--mono);font-size:11px}
+.sc{fill:var(--cyan);font-family:var(--mono);font-size:12px}
+.sg{fill:var(--green);font-family:var(--mono);font-size:12px}
+.node{fill:var(--wire)}
+.term{fill:var(--bg);stroke:var(--wire);stroke-width:2}
+.flow{fill:none;stroke:var(--amber);stroke-width:3.2;stroke-dasharray:2 14;stroke-linecap:round;animation:flow linear infinite;opacity:.95}
+@keyframes flow{to{stroke-dashoffset:-32}}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* home */
+.hero{padding:30px;border-radius:18px;border:1px solid var(--line);background:linear-gradient(135deg,rgba(255,184,77,.13),rgba(79,209,232,.08) 60%,transparent),var(--card);position:relative;overflow:hidden}
+.hero h1{font-size:40px;line-height:1.1;max-width:720px}
+.hero h1 em{font-style:normal;color:var(--amber)}
+.hero p{color:var(--muted);max-width:680px;font-size:16px}
+.hero .meta{display:flex;gap:18px;flex-wrap:wrap;margin-top:18px;font-size:14px}
+.hero .meta span{color:var(--muted)}
+.hero .meta [contenteditable]{color:var(--text);border-bottom:1px dashed var(--line);outline:none;padding:0 2px}
+.hero svg.wave{position:absolute;right:-20px;bottom:-10px;width:420px;opacity:.5}
+.mcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin-top:20px}
+.mc{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;cursor:pointer;transition:.15s}
+.mc:hover{border-color:var(--amber);transform:translateY(-2px)}
+.mc .k{font-family:var(--mono);color:var(--amber);font-size:12px}
+.mc h3{margin:6px 0;font-size:17px}
+.mc p{color:var(--muted);margin:0;font-size:13.5px}
+.feat{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:20px}
+.feat div{border-left:2px solid var(--amber);padding:4px 12px}
+.feat b{display:block}
+.feat span{color:var(--muted);font-size:13.5px}
+@media (max-width:1100px){.g-top{grid-template-columns:1fr}.g-bot{grid-template-columns:1fr}}
+@media (max-width:800px){
+  .app{grid-template-columns:1fr}
+  nav.side{position:fixed;z-index:20;width:260px;transform:translateX(-100%);transition:.2s}
+  nav.side.open{transform:none}
+  .menu-btn{display:inline-block;margin-bottom:14px}
+  main{padding:16px}
+  .hero h1{font-size:30px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<nav class="side" id="side"></nav>
+<main>
+  <button class="btn menu-btn" id="menuBtn">☰ Modules</button>
+  <div id="view"></div>
+</main>
+</div>
+
+<script>
+/* ====================== Utilities ====================== */
+const $ = id => document.getElementById(id);
+const PI = Math.PI, DEG = 180/PI;
+function eng(v,u='',d=4){
+  if(v===Infinity) return '∞ '+u;
+  if(v===-Infinity) return '−∞ '+u;
+  if(!isFinite(v)) return '—';
+  if(Math.abs(v)<1e-12) return '0 '+u;
+  const a=Math.abs(v);
+  const P=[[1e9,'G'],[1e6,'M'],[1e3,'k'],[1,''],[1e-3,'m'],[1e-6,'µ'],[1e-9,'n']];
+  for(const [m,p] of P){ if(a>=m*0.99995){ return fmtNum(v/m,d)+' '+p+u; } }
+  return fmtNum(v/1e-9,d)+' n'+u;
+}
+function fmtNum(x,d=4){ const s=(+x.toPrecision(d)).toString(); return s.replace('-','−'); }
+function fx(v,dp=2){ return isFinite(v)? v.toFixed(dp).replace('-','−') : '—'; }
+const n4 = v => fmtNum(v,4);
+function css(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+/* ====================== SVG helpers ====================== */
+const S = {
+  wire:(pts)=>`<polyline class="w" points="${pts.map(p=>p.join(',')).join(' ')}"/>`,
+  flow(pts,I,Iref){
+    if(!isFinite(I)||Math.abs(I)<1e-9||!Iref) return '';
+    const dur=Math.min(4,Math.max(0.18,0.5*Iref/Math.abs(I)));
+    return `<polyline class="flow" points="${pts.map(p=>p.join(',')).join(' ')}" style="animation-duration:${dur}s;animation-direction:${I>0?'normal':'reverse'}"/>`;
+  },
+  node:(x,y)=>`<circle class="node" cx="${x}" cy="${y}" r="4"/>`,
+  term:(x,y,l)=>`<circle class="term" cx="${x}" cy="${y}" r="5"/>`+(l?`<text class="st" x="${x}" y="${y-12}" text-anchor="middle" font-weight="600">${l}</text>`:''),
+  res(x1,y1,x2,y2,name,val,cls='',side=1){
+    const L=Math.hypot(x2-x1,y2-y1),ux=(x2-x1)/L,uy=(y2-y1)/L,px=-uy,py=ux;
+    const zl=Math.min(64,L*0.6),s=(L-zl)/2,n=6;
+    const pts=[[x1,y1],[x1+ux*s,y1+uy*s]];
+    for(let i=1;i<=n;i++){const t=s+zl*(i-0.5)/n,sg=i%2?1:-1;pts.push([x1+ux*t+px*9*sg,y1+uy*t+py*9*sg]);}
+    pts.push([x1+ux*(s+zl),y1+uy*(s+zl)],[x2,y2]);
+    const mx=(x1+x2)/2,my=(y1+y2)/2,horiz=Math.abs(ux)>Math.abs(uy);
+    let lab='';
+    if(horiz){ const yy=my-24*side; lab=`<text class="st" x="${mx}" y="${side>0?yy-14:yy+4}" text-anchor="middle">${name}</text><text class="sv" x="${mx}" y="${side>0?yy:yy+18}" text-anchor="middle">${val}</text>`; }
+    else { const xx=mx+20*side; lab=`<text class="st" x="${xx}" y="${my-4}" text-anchor="${side>0?'start':'end'}">${name}</text><text class="sv" x="${xx}" y="${my+13}" text-anchor="${side>0?'start':'end'}">${val}</text>`; }
+    return `<polyline class="cmp ${cls}" points="${pts.map(p=>p.map(v=>v.toFixed(1)).join(',')).join(' ')}"/>`+lab;
+  },
+  vs(x,yT,yB,name,val,side=-1){
+    const cy=(yT+yB)/2,r=21;
+    return `<g class="top"><line class="w" x1="${x}" y1="${yT}" x2="${x}" y2="${cy-r}"/><line class="w" x1="${x}" y1="${cy+r}" x2="${x}" y2="${yB}"/>
+    <circle class="src" cx="${x}" cy="${cy}" r="${r}"/><text class="sc" x="${x}" y="${cy-5}" text-anchor="middle" font-size="15">+</text><text class="sc" x="${x}" y="${cy+14}" text-anchor="middle" font-size="15">−</text>
+    <text class="st" x="${x+(r+8)*side}" y="${cy-4}" text-anchor="${side<0?'end':'start'}">${name}</text><text class="sv" x="${x+(r+8)*side}" y="${cy+13}" text-anchor="${side<0?'end':'start'}">${val}</text></g>`;
+  },
+  is(x,yT,yB,name,val,side=-1){
+    const cy=(yT+yB)/2,r=21;
+    return `<g class="top"><line class="w" x1="${x}" y1="${yT}" x2="${x}" y2="${cy-r}"/><line class="w" x1="${x}" y1="${cy+r}" x2="${x}" y2="${yB}"/>
+    <circle class="src" cx="${x}" cy="${cy}" r="${r}"/><path d="M${x} ${cy+11} L${x} ${cy-9} M${x-6} ${cy-3} L${x} ${cy-11} L${x+6} ${cy-3}" stroke="var(--cyan)" stroke-width="2.2" fill="none"/>
+    <text class="st" x="${x+(r+8)*side}" y="${cy-4}" text-anchor="${side<0?'end':'start'}">${name}</text><text class="sv" x="${x+(r+8)*side}" y="${cy+13}" text-anchor="${side<0?'end':'start'}">${val}</text></g>`;
+  },
+  ind(x1,x2,y,name,val){
+    const L=x2-x1,cl=Math.min(70,L*0.6),s=x1+(L-cl)/2,n=4,w=cl/n;
+    let d=`M${x1} ${y} L${s} ${y}`;
+    for(let i=0;i<n;i++) d+=` A${w/2} ${w/2} 0 0 1 ${s+w*(i+1)} ${y}`;
+    d+=` L${x2} ${y}`;
+    const mx=(x1+x2)/2;
+    return `<path class="cmp" d="${d}"/><text class="st" x="${mx}" y="${y-38}" text-anchor="middle">${name}</text><text class="sv" x="${mx}" y="${y-24}" text-anchor="middle">${val}</text>`;
+  },
+  cap(x1,x2,y,name,val){
+    const mx=(x1+x2)/2;
+    return `<line class="w" x1="${x1}" y1="${y}" x2="${mx-6}" y2="${y}"/><line class="w" x1="${mx+6}" y1="${y}" x2="${x2}" y2="${y}"/>
+    <line class="cmp" x1="${mx-6}" y1="${y-16}" x2="${mx-6}" y2="${y+16}"/><line class="cmp" x1="${mx+6}" y1="${y-16}" x2="${mx+6}" y2="${y+16}"/>
+    <text class="st" x="${mx}" y="${y-38}" text-anchor="middle">${name}</text><text class="sv" x="${mx}" y="${y-24}" text-anchor="middle">${val}</text>`;
+  },
+  arrow(x1,y1,x2,y2,color,w=2.5,label='',lcls='sv'){
+    const a=Math.atan2(y2-y1,x2-x1),h=10;
+    const p1=[x2-h*Math.cos(a-0.4),y2-h*Math.sin(a-0.4)],p2=[x2-h*Math.cos(a+0.4),y2-h*Math.sin(a+0.4)];
+    const lx=x2+14*Math.cos(a),ly=y2+14*Math.sin(a)+4;
+    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="${w}" stroke-linecap="round"/><polygon points="${x2},${y2} ${p1.join(',')} ${p2.join(',')}" fill="${color}"/>`+
+      (label?`<text class="${lcls}" x="${lx}" y="${ly}" text-anchor="${Math.cos(a)>0.3?'start':Math.cos(a)<-0.3?'end':'middle'}" fill="${color}">${label}</text>`:'');
+  },
+  loop(cx,cy,r,label,cw=true){
+    const a0=-PI*0.75,a1=PI*0.6;
+    const x0=cx+r*Math.cos(a0),y0=cy+r*Math.sin(a0),x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1);
+    const tang=a1+PI/2,h=9;
+    return `<path d="M${x0} ${y0} A${r} ${r} 0 1 1 ${x1} ${y1}" fill="none" stroke="var(--violet)" stroke-width="2" stroke-dasharray="5 4"/>
+    <polygon points="${x1},${y1} ${x1-h*Math.cos(tang-0.45)},${y1-h*Math.sin(tang-0.45)} ${x1-h*Math.cos(tang+0.45)},${y1-h*Math.sin(tang+0.45)}" fill="var(--violet)"/>
+    <text x="${cx}" y="${cy+5}" text-anchor="middle" font-family="JetBrains Mono" font-size="13" fill="var(--violet)">${label}</text>`;
+  },
+  gnd(x,y){return `<line class="w" x1="${x}" y1="${y}" x2="${x}" y2="${y+12}"/><line class="w" x1="${x-12}" y1="${y+12}" x2="${x+12}" y2="${y+12}"/><line class="w" x1="${x-7}" y1="${y+17}" x2="${x+7}" y2="${y+17}"/><line class="w" x1="${x-3}" y1="${y+22}" x2="${x+3}" y2="${y+22}"/>`;},
+  txt:(x,y,t,cls='st',anchor='middle')=>`<text class="${cls}" x="${x}" y="${y}" text-anchor="${anchor}">${t}</text>`,
+  svg:(w,h,inner)=>{ const tops=inner.match(/<g class="top">[\s\S]*?<\/g>/g)||[]; inner=inner.replace(/<g class="top">[\s\S]*?<\/g>/g,''); return `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">${inner}${tops.join('')}</svg>`; }
+};
+
+/* ====================== Charts (canvas) ====================== */
+function niceTicks(min,max,n=5){
+  const span=(max-min)||1, st0=span/n, mag=10**Math.floor(Math.log10(st0)), r=st0/mag;
+  const step=(r<1.5?1:r<3?2:r<7?5:10)*mag, t=[];
+  for(let v=Math.ceil(min/step-1e-9)*step; v<=max+step*1e-9; v+=step) t.push(+v.toPrecision(12));
+  return t;
+}
+function prepCanvas(cv){
+  const dpr=window.devicePixelRatio||1, w=cv.clientWidth, h=cv.clientHeight;
+  cv.width=w*dpr; cv.height=h*dpr; const c=cv.getContext('2d'); c.setTransform(dpr,0,0,dpr,0,0);
+  c.clearRect(0,0,w,h); return {c,w,h};
+}
+function lineChart(cv,o){
+  if(!cv) return;
+  const {c,w,h}=prepCanvas(cv); const m={l:58,r:16,t:26,b:42};
+  const pw=w-m.l-m.r, ph=h-m.t-m.b;
+  const tx=o.logx?(v=>Math.log10(v)):(v=>v);
+  let xmin=tx(o.x[0]), xmax=tx(o.x[o.x.length-1]);
+  let ys=o.series.flatMap(s=>s.y).filter(isFinite);
+  if(o.markers) ys=ys.concat(o.markers.map(k=>k.y).filter(isFinite));
+  let ymin=o.ymin!==undefined?o.ymin:Math.min(0,...ys), ymax=o.ymax!==undefined?o.ymax:Math.max(...ys);
+  if(ymax===ymin) ymax=ymin+1;
+  const pad=(ymax-ymin)*0.08; if(o.ymax===undefined) ymax+=pad; if(o.ymin===undefined && ymin<0) ymin-=pad;
+  const X=v=>m.l+(tx(v)-xmin)/(xmax-xmin)*pw, Y=v=>m.t+(1-(v-ymin)/(ymax-ymin))*ph;
+  c.font='11px "JetBrains Mono", ui-monospace, monospace'; c.strokeStyle='#26314f'; c.fillStyle='#8d99b8'; c.lineWidth=1;
+  // y grid
+  for(const t of niceTicks(ymin,ymax,5)){ const y=Y(t); c.beginPath(); c.moveTo(m.l,y); c.lineTo(w-m.r,y); c.stroke(); c.textAlign='right'; c.fillText(eng(t,'',3).trim(),m.l-6,y+4); }
+  // x grid
+  let xt;
+  if(o.logx){ xt=[]; for(let e=Math.floor(xmin);e<=Math.ceil(xmax);e++) for(const k of [1,2,5]){const v=k*10**e; if(Math.log10(v)>=xmin-1e-9&&Math.log10(v)<=xmax+1e-9) xt.push(v);} }
+  else xt=niceTicks(xmin,xmax,6);
+  for(const t of xt){ const x=X(t); c.beginPath(); c.moveTo(x,m.t); c.lineTo(x,m.t+ph); c.stroke(); c.textAlign='center'; c.fillText(eng(t,'',3).trim(),x,m.t+ph+15); }
+  // zero line
+  if(ymin<0&&ymax>0){ c.strokeStyle='#4a5a85'; c.beginPath(); c.moveTo(m.l,Y(0)); c.lineTo(w-m.r,Y(0)); c.stroke(); }
+  // axes labels
+  c.fillStyle='#8d99b8'; c.font='12px "Space Grotesk", system-ui, sans-serif'; c.textAlign='center';
+  c.fillText(o.xl||'',m.l+pw/2,h-6);
+  c.save(); c.translate(13,m.t+ph/2); c.rotate(-PI/2); c.fillText(o.yl||'',0,0); c.restore();
+  // vlines
+  (o.vlines||[]).forEach(v=>{ if(!isFinite(v.x)) return; const x=X(v.x); if(x<m.l||x>w-m.r) return; c.strokeStyle=v.color; c.setLineDash([4,4]); c.beginPath(); c.moveTo(x,m.t); c.lineTo(x,m.t+ph); c.stroke(); c.setLineDash([]); c.fillStyle=v.color; c.font='11px "JetBrains Mono", ui-monospace, monospace'; c.textAlign='left'; c.fillText(v.label||'',Math.min(x+5,w-m.r-90),m.t+ph-8); });
+  // series
+  c.save(); c.beginPath(); c.rect(m.l,m.t,pw,ph); c.clip();
+  o.series.forEach(s=>{ c.strokeStyle=s.color; c.lineWidth=s.w||2.2; c.setLineDash(s.dash||[]); c.beginPath(); let st=false;
+    o.x.forEach((xv,i)=>{ const yv=s.y[i]; if(!isFinite(yv)){st=false;return;} const px=X(xv),py=Y(yv); st?c.lineTo(px,py):c.moveTo(px,py); st=true; }); c.stroke(); });
+  c.setLineDash([]); c.restore();
+  // markers
+  const placed=[];
+  (o.markers||[]).forEach(k=>{ if(!isFinite(k.x)||!isFinite(k.y)) return; const x=X(k.x),y=Y(k.y); if(x<m.l-1||x>w-m.r+1) return; c.fillStyle=k.color; c.beginPath(); c.arc(x,y,5,0,2*PI); c.fill(); c.strokeStyle='#0b1020'; c.lineWidth=2; c.stroke();
+    if(k.label){ c.font='11px "JetBrains Mono", ui-monospace, monospace'; const right=x>w-170, tw=c.measureText(k.label).width; let lx=right?x-9-tw:x+9, ly=y-9;
+      for(let it=0;it<6;it++){ const hit=placed.some(b=>lx<b.x+b.w&&lx+tw>b.x&&ly-11<b.y&&ly>b.y-11); if(!hit) break; ly+=16; }
+      if(ly-11<m.t) ly=y+18; placed.push({x:lx,y:ly,w:tw}); c.textAlign='left'; c.fillText(k.label,lx,ly);} });
+  // legend
+  let lx=m.l+8; c.font='12px "Space Grotesk", system-ui, sans-serif'; c.textAlign='left';
+  o.series.forEach(s=>{ if(!s.label) return; c.fillStyle=s.color; c.fillRect(lx,8,14,3); c.fillStyle='#c9d4ee'; c.fillText(s.label,lx+19,13); lx+=c.measureText(s.label).width+38; });
+}
+function barChart(cv,o){
+  if(!cv) return;
+  const {c,w,h}=prepCanvas(cv); const m={l:58,r:16,t:28,b:34}; const pw=w-m.l-m.r, ph=h-m.t-m.b;
+  const all=o.series.flatMap(s=>s.vals); let ymin=Math.min(0,...all), ymax=Math.max(0,...all); if(ymax===ymin) ymax=1;
+  const pad=(ymax-ymin)*0.12; ymax+=pad; if(ymin<0) ymin-=pad;
+  const Y=v=>m.t+(1-(v-ymin)/(ymax-ymin))*ph;
+  c.font='11px "JetBrains Mono", ui-monospace, monospace'; c.strokeStyle='#26314f'; c.fillStyle='#8d99b8';
+  for(const t of niceTicks(ymin,ymax,5)){ const y=Y(t); c.beginPath(); c.moveTo(m.l,y); c.lineTo(w-m.r,y); c.stroke(); c.textAlign='right'; c.fillText(eng(t,'',3).trim(),m.l-6,y+4); }
+  c.strokeStyle='#4a5a85'; c.beginPath(); c.moveTo(m.l,Y(0)); c.lineTo(w-m.r,Y(0)); c.stroke();
+  const G=o.groups.length, gw=pw/G, ns=o.series.length, bw=Math.min(40,gw*0.75/ns);
+  o.groups.forEach((g,gi)=>{ const gx=m.l+gi*gw+gw/2-bw*ns/2;
+    o.series.forEach((s,si)=>{ const v=s.vals[gi], x=gx+si*bw, y0=Y(0), y1=Y(v); c.fillStyle=s.color; c.fillRect(x+2,Math.min(y0,y1),bw-4,Math.abs(y1-y0)); c.fillStyle='#c9d4ee'; c.font='10px "JetBrains Mono", ui-monospace, monospace'; c.textAlign='center'; c.fillText(eng(v,'',3).trim(),x+bw/2,v>=0?y1-4:y1+12); });
+    c.fillStyle='#8d99b8'; c.font='12px "Space Grotesk", system-ui, sans-serif'; c.textAlign='center'; c.fillText(g,m.l+gi*gw+gw/2,h-12); });
+  c.save(); c.translate(13,m.t+ph/2); c.rotate(-PI/2); c.textAlign='center'; c.fillText(o.yl||'',0,0); c.restore();
+  let lx=m.l+8; c.font='12px "Space Grotesk", system-ui, sans-serif'; c.textAlign='left';
+  o.series.forEach(s=>{ c.fillStyle=s.color; c.fillRect(lx,6,12,10); c.fillStyle='#c9d4ee'; c.fillText(s.label,lx+17,15); lx+=c.measureText(s.label).width+34; });
+}
+const linspace=(a,b,n)=>Array.from({length:n},(_,i)=>a+(b-a)*i/(n-1));
+const logspace=(a,b,n)=>Array.from({length:n},(_,i)=>10**(Math.log10(a)+(Math.log10(b)-Math.log10(a))*i/(n-1)));
+
+/* ====================== Generic UI builders ====================== */
+function buildControls(el,defs,onChange){
+  const vals={}; el.innerHTML='';
+  defs.forEach(d=>{
+    vals[d.k]=d.v;
+    const box=document.createElement('div'); box.className='prm'; box.id='p-'+d.k;
+    if(d.type==='sel'){
+      box.innerHTML=`<label><span id="lbl-${d.k}">${d.label}</span></label><select>${d.opts.map(o=>`<option value="${o[0]}" ${o[0]===d.v?'selected':''}>${o[1]}</option>`).join('')}</select>`;
+      box.querySelector('select').onchange=e=>{vals[d.k]=e.target.value; onChange();};
+    } else {
+      box.innerHTML=`<label><span id="lbl-${d.k}">${d.label}</span></label><div class="row"><input type="range" min="${d.min}" max="${d.max}" step="${d.step}" value="${d.v}"><input type="number" step="any" value="${d.v}"><span class="u">${d.unit||''}</span></div>`;
+      const r=box.querySelector('input[type=range]'), n=box.querySelector('input[type=number]');
+      r.oninput=()=>{vals[d.k]=parseFloat(r.value); n.value=r.value; onChange();};
+      n.oninput=()=>{const x=parseFloat(n.value); if(isNaN(x)) return; const lo=d.hardMin!==undefined?d.hardMin:d.min; if(x<lo) return; vals[d.k]=x; r.value=x; onChange();};
+      n.onchange=()=>{const x=parseFloat(n.value); const lo=d.hardMin!==undefined?d.hardMin:d.min; if(isNaN(x)||x<lo){n.value=vals[d.k];}};
+    }
+    el.appendChild(box);
+  });
+  const api={vals,
+    set(k,v){ vals[k]=v; const b=$('p-'+k); if(!b) return; const s=b.querySelector('select'); if(s){s.value=v;return;} b.querySelector('input[type=range]').value=v; b.querySelector('input[type=number]').value=+(+v).toPrecision(5); },
+    label(k,t){ const l=$('lbl-'+k); if(l) l.textContent=t; },
+    show(k,on){ const b=$('p-'+k); if(b) b.classList.toggle('hide',!on); }
+  };
+  return api;
+}
+const results=items=>items.map(([l,v,c])=>`<div class="res ${c||''}"><small>${l}</small><b>${v}</b></div>`).join('');
+const steps=items=>`<ol class="steps">${items.map(([t,f])=>`<li><div class="t">${t}</div>${f?`<div class="f">${f}</div>`:''}</li>`).join('')}</ol>`;
+function tabsHtml(id,list,on){ return `<div class="tabs" id="${id}">${list.map(([k,l])=>`<button data-k="${k}" class="${k===on?'on':''}">${l}</button>`).join('')}</div>`; }
+function bindTabs(id,cb){ const el=$(id); if(!el) return; el.querySelectorAll('button').forEach(b=>b.onclick=()=>{el.querySelectorAll('button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); cb(b.dataset.k);}); }
+
+/* ====================== Modules ====================== */
+const MODULES=[];
+let current=null, animId=null;
+
+/* ---------- 1. Thevenin / Norton / Max Power ---------- */
+MODULES.push({
+  id:'thevenin', grp:'DC Network Theorems', ic:'Vth', title:"Thevenin's, Norton's & Max Power Transfer",
+  tag:'Module 1 · DC Circuits',
+  intro:'Change any source or resistor value and see the Thevenin and Norton equivalents seen by the load R<sub>L</sub> update straight away, along with the load power curve that shows the maximum power transfer point.',
+  params:[
+    {k:'Vs',label:'Source voltage Vs',unit:'V',min:1,max:100,step:0.5,v:12},
+    {k:'R1',label:'Series resistor R1',unit:'Ω',min:0.1,max:100,step:0.1,v:4,hardMin:0.001},
+    {k:'R2',label:'Shunt resistor R2',unit:'Ω',min:0.1,max:100,step:0.1,v:6,hardMin:0.001},
+    {k:'R3',label:'Series resistor R3',unit:'Ω',min:0,max:100,step:0.1,v:2.6},
+    {k:'RL',label:'Load resistor RL',unit:'Ω',min:0.1,max:100,step:0.1,v:3,hardMin:0.001},
+  ],
+  view:'orig',
+  viz(){ return {tabs:[['orig','Original circuit'],['th','Thevenin equivalent'],['no','Norton equivalent']], def:'orig'}; },
+  chartHtml:`<h3><span class="dot"></span>Load power vs load resistance</h3><div class="chartwrap"><canvas id="ch1"></canvas></div><div class="note">The curve peaks exactly where R<sub>L</sub> = R<sub>th</sub>: that is the maximum power transfer theorem.</div>`,
+  actions:[{label:'Set RL = Rth (max power)',fn(v,api){ const Rth=v.R1*v.R2/(v.R1+v.R2)+v.R3; api.set('RL',+Rth.toFixed(4)); }}],
+  calc(v){
+    const Rp=v.R1*v.R2/(v.R1+v.R2), Rth=Rp+v.R3, Vth=v.Vs*v.R2/(v.R1+v.R2), IN=Vth/Rth;
+    const IL=Vth/(Rth+v.RL), VL=IL*v.RL, PL=IL*IL*v.RL, Pmax=Vth*Vth/(4*Rth);
+    const Rx=v.R2*(v.R3+v.RL)/(v.R2+v.R3+v.RL), Is=v.Vs/(v.R1+Rx), I2=Is*(v.R3+v.RL)/(v.R2+v.R3+v.RL);
+    return {Rp,Rth,Vth,IN,IL,VL,PL,Pmax,Is,I2,eff:v.RL/(v.RL+Rth)*100};
+  },
+  draw(v,r,view){
+    let g='';
+    if(view==='orig'){
+      const Iref=Math.max(r.Is,r.I2,r.IL);
+      g+=S.vs(60,70,240,'Vs',eng(v.Vs,'V'));
+      g+=S.wire([[60,70],[90,70]])+S.res(90,70,250,70,'R1',eng(v.R1,'Ω'))+S.wire([[250,70],[300,70]]);
+      g+=S.res(300,70,300,240,'R2',eng(v.R2,'Ω'),'',1);
+      g+=S.wire([[300,70],[330,70]])+S.res(330,70,460,70,'R3',eng(v.R3,'Ω'))+S.wire([[460,70],[500,70],[580,70]]);
+      g+=S.res(580,70,580,240,'RL',eng(v.RL,'Ω'),'load',1)+S.wire([[580,240],[60,240]]);
+      g+=S.term(500,70,'A')+S.term(500,240,'')+S.txt(500,268,'B','st')+S.node(300,70)+S.node(300,240);
+      g+=S.flow([[60,240],[60,70],[300,70]],r.Is,Iref)+S.flow([[300,70],[300,240],[60,240]],r.I2,Iref)+S.flow([[300,70],[580,70],[580,240],[300,240]],r.IL,Iref);
+      g+=S.txt(170,120,'Is = '+eng(r.Is,'A'),'sc')+S.txt(320,222,'I₂ = '+eng(r.I2,'A'),'sc','start')+S.txt(565,125,'IL = '+eng(r.IL,'A'),'sg','end');
+      g+=S.txt(400,290,'Vth = '+eng(r.Vth,'V')+'   ·   Rth = '+eng(r.Rth,'Ω'),'sm');
+    } else if(view==='th'){
+      g+=S.vs(120,70,240,'Vth',eng(r.Vth,'V'));
+      g+=S.wire([[120,70],[160,70]])+S.res(160,70,380,70,'Rth',eng(r.Rth,'Ω'))+S.wire([[380,70],[440,70],[560,70]]);
+      g+=S.res(560,70,560,240,'RL',eng(v.RL,'Ω'),'load',1)+S.wire([[560,240],[120,240]]);
+      g+=S.term(440,70,'A')+S.term(440,240,'')+S.txt(440,268,'B');
+      g+=S.flow([[120,240],[120,70],[560,70],[560,240],[120,240]],r.IL,r.IL);
+      g+=S.txt(340,170,'IL = Vth / (Rth + RL) = '+eng(r.IL,'A'),'sg');
+    } else {
+      const IRN=r.IN*v.RL/(r.Rth+v.RL);
+      g+=S.is(120,70,240,'IN',eng(r.IN,'A'));
+      g+=S.wire([[120,70],[300,70],[440,70],[560,70]]);
+      g+=S.res(300,70,300,240,'RN',eng(r.Rth,'Ω'),'',1);
+      g+=S.res(560,70,560,240,'RL',eng(v.RL,'Ω'),'load',1)+S.wire([[560,240],[120,240]]);
+      g+=S.node(300,70)+S.node(300,240)+S.term(440,70,'A')+S.term(440,240,'')+S.txt(440,268,'B');
+      g+=S.flow([[120,240],[120,70],[300,70]],r.IN,r.IN)+S.flow([[300,70],[300,240],[120,240]],IRN,r.IN)+S.flow([[300,70],[560,70],[560,240],[300,240]],r.IL,r.IN);
+      g+=S.txt(660,170,'IL = '+eng(r.IL,'A'),'sg','end');
+    }
+    return S.svg(700,300,g);
+  },
+  update(v,view){
+    const r=this.calc(v);
+    $('viz').innerHTML=this.draw(v,r,view);
+    $('res').innerHTML=results([
+      ['Thevenin voltage Vth',eng(r.Vth,'V'),'hl'],['Thevenin resistance Rth',eng(r.Rth,'Ω'),'hl'],
+      ['Norton current IN',eng(r.IN,'A'),'hl'],['Load current IL',eng(r.IL,'A')],['Load voltage VL',eng(r.VL,'V')],
+      ['Load power PL',eng(r.PL,'W')],['Max power Pmax',eng(r.Pmax,'W'),'ok'],['RL for Pmax',eng(r.Rth,'Ω'),'ok'],
+      ['PL / Pmax',fx(r.PL/r.Pmax*100,1)+' %'],['Efficiency η',fx(r.eff,1)+' %']]);
+    $('steps').innerHTML=steps([
+      ['Remove RL and find open-circuit voltage across A–B (Vth)',`No current flows in R3 when A–B is open, so Vth = voltage across R2:\nVth = Vs × R2/(R1+R2) = ${n4(v.Vs)} × ${n4(v.R2)}/(${n4(v.R1)}+${n4(v.R2)}) = ${eng(r.Vth,'V')}`],
+      ['Short the voltage source and find Rth looking into A–B',`Rth = (R1 ∥ R2) + R3 = (${n4(v.R1)}×${n4(v.R2)})/(${n4(v.R1)}+${n4(v.R2)}) + ${n4(v.R3)}\n    = ${n4(r.Rp)} + ${n4(v.R3)} = ${eng(r.Rth,'Ω')}`],
+      ['Norton equivalent',`IN = Vth / Rth = ${n4(r.Vth)} / ${n4(r.Rth)} = ${eng(r.IN,'A')}\nRN = Rth = ${eng(r.Rth,'Ω')}`],
+      ['Reconnect RL to the equivalent circuit',`IL = Vth/(Rth+RL) = ${n4(r.Vth)}/(${n4(r.Rth)}+${n4(v.RL)}) = ${eng(r.IL,'A')}\nVL = IL·RL = ${eng(r.VL,'V')}     PL = IL²·RL = ${eng(r.PL,'W')}`],
+      ['Maximum power transfer',`Power is maximum when RL = Rth = ${eng(r.Rth,'Ω')}\nPmax = Vth²/(4·Rth) = ${n4(r.Vth)}²/(4×${n4(r.Rth)}) = ${eng(r.Pmax,'W')}  (η = 50 %)`]
+    ]);
+    const xmax=Math.max(4*r.Rth,1.5*v.RL), xs=linspace(xmax/400,xmax,300);
+    lineChart($('ch1'),{x:xs,series:[{y:xs.map(R=>r.Vth**2*R/(r.Rth+R)**2),color:css('--amber'),label:'PL (W)'}],xl:'Load resistance RL (Ω)',yl:'Power (W)',
+      vlines:[{x:r.Rth,color:css('--green'),label:'RL = Rth'}],markers:[{x:r.Rth,y:r.Pmax,color:css('--green'),label:'Pmax '+eng(r.Pmax,'W')},{x:v.RL,y:r.PL,color:css('--pink'),label:'now'}]});
+  },
+  theory:`Thevenin: Any linear two-terminal network ≡ a voltage source Vth in series with Rth.
+Norton:   The same network ≡ a current source IN = Vth/Rth in parallel with RN = Rth.
+Max Power Transfer: P_L is maximum when R_L = R_th, and P_max = V_th² / (4 R_th).`
+});
+
+/* ---------- 2. Mesh / Nodal / Superposition ---------- */
+MODULES.push({
+  id:'mesh', grp:'DC Network Theorems', ic:'KVL', title:'Mesh, Nodal Analysis & Superposition',
+  tag:'Module 1 · DC Circuits',
+  intro:'A two-source network solved three ways: KCL (nodal), KVL (mesh) and superposition. All three methods give the same branch currents, and the power balance check confirms it.',
+  params:[
+    {k:'V1',label:'Source V1',unit:'V',min:-50,max:50,step:0.5,v:10,hardMin:-1e6},
+    {k:'V2',label:'Source V2',unit:'V',min:-50,max:50,step:0.5,v:5,hardMin:-1e6},
+    {k:'R1',label:'Resistor R1',unit:'Ω',min:0.1,max:50,step:0.1,v:2,hardMin:0.001},
+    {k:'R2',label:'Resistor R2',unit:'Ω',min:0.1,max:50,step:0.1,v:4,hardMin:0.001},
+    {k:'R3',label:'Resistor R3',unit:'Ω',min:0.1,max:50,step:0.1,v:3,hardMin:0.001},
+  ],
+  viz(){ return {tabs:[['nodal','Nodal'],['mesh','Mesh'],['s1','Superposition: V1 alone'],['s2','Superposition: V2 alone']],def:'nodal'}; },
+  chartHtml:`<h3><span class="dot"></span>Superposition: branch currents</h3><div class="chartwrap"><canvas id="ch1"></canvas></div><div class="note">The current in each branch with both sources = (V1 acting alone) + (V2 acting alone).</div>`,
+  solve(V1,V2,R1,R2,R3){ const G=1/R1+1/R2+1/R3, VA=(V1/R1+V2/R3)/G; return {VA,I1:(V1-VA)/R1,I3:(VA-V2)/R3,I2:VA/R2}; },
+  draw(v,s,view){
+    const on1=view!=='s2', on2=view!=='s1';
+    const Iref=Math.max(Math.abs(s.I1),Math.abs(s.I2),Math.abs(s.I3));
+    let g='';
+    g+= on1? S.vs(60,70,240,'V1',eng(v.V1,'V')) : S.wire([[60,70],[60,240]])+S.txt(50,160,'V1 shorted','sm','end');
+    g+=S.wire([[60,70],[100,70]])+S.res(100,70,280,70,'R1',eng(v.R1,'Ω'))+S.wire([[280,70],[340,70]]);
+    g+=S.res(340,70,340,240,'R2',eng(v.R2,'Ω'),'',1);
+    g+=S.wire([[340,70],[400,70]])+S.res(400,70,580,70,'R3',eng(v.R3,'Ω'))+S.wire([[580,70],[620,70]]);
+    g+= on2? S.vs(620,70,240,'V2',eng(v.V2,'V'),1) : S.wire([[620,70],[620,240]])+S.txt(630,160,'V2 shorted','sm','start');
+    g+=S.wire([[620,240],[60,240]])+S.node(340,70)+S.node(340,240);
+    g+=S.flow([[60,240],[60,70],[340,70]],s.I1,Iref)+S.flow([[340,70],[620,70],[620,240],[340,240]],s.I3,Iref)+S.flow([[340,70],[340,240]],s.I2,Iref)+S.flow([[340,240],[60,240]],s.I1,Iref);
+    if(view==='mesh'){ g+=S.loop(200,160,42,'I₁')+S.loop(480,160,42,'I₂'); }
+    else { g+=`<circle cx="340" cy="70" r="9" fill="none" stroke="var(--violet)" stroke-width="2"/>`+S.txt(340,36,'Node A: VA = '+eng(s.VA,'V'),'sv')+S.gnd(340,240)+S.txt(360,272,'0 V (ref)','sm','start'); }
+    g+=S.txt(170,115,'I(R1) = '+eng(s.I1,'A'),'sc')+S.txt(510,115,'I(R3) = '+eng(s.I3,'A'),'sc')+S.txt(325,225,'I(R2) = '+eng(s.I2,'A'),'sg','end');
+    return S.svg(700,300,g);
+  },
+  update(v,view){
+    const b=this.solve(v.V1,v.V2,v.R1,v.R2,v.R3), a=this.solve(v.V1,0,v.R1,v.R2,v.R3), c=this.solve(0,v.V2,v.R1,v.R2,v.R3);
+    const shown= view==='s1'?a: view==='s2'?c: b;
+    $('viz').innerHTML=this.draw(v,shown,view);
+    const PV1=v.V1*b.I1, PV2=-v.V2*b.I3, PR=b.I1**2*v.R1+b.I2**2*v.R2+b.I3**2*v.R3;
+    $('res').innerHTML=results([
+      ['Node voltage VA',eng(b.VA,'V'),'hl'],['Mesh current I₁ = I(R1)',eng(b.I1,'A'),'hl'],['Mesh current I₂ = I(R3)',eng(b.I3,'A'),'hl'],
+      ['I(R2) = I₁ − I₂',eng(b.I2,'A')],['Power from V1',eng(PV1,'W')],['Power from V2',eng(PV2,'W')],
+      ['Power in resistors',eng(PR,'W')],['Power balance',Math.abs(PV1+PV2-PR)<1e-6*Math.max(1,PR)?'✓ Balanced':'✗','ok']]);
+    const D=(v.R1+v.R2)*(v.R2+v.R3)-v.R2**2;
+    let st;
+    if(view==='nodal') st=[
+      ['Choose bottom node as reference (0 V); unknown node voltage VA',''],
+      ['Write KCL at node A (sum of currents leaving = 0)',`(VA − V1)/R1 + VA/R2 + (VA − V2)/R3 = 0`],
+      ['Rearrange',`VA (1/R1 + 1/R2 + 1/R3) = V1/R1 + V2/R3\nVA (${n4(1/v.R1)} + ${n4(1/v.R2)} + ${n4(1/v.R3)}) = ${n4(v.V1/v.R1)} + ${n4(v.V2/v.R3)}`],
+      ['Solve for VA',`VA = ${n4(v.V1/v.R1+v.V2/v.R3)} / ${n4(1/v.R1+1/v.R2+1/v.R3)} = ${eng(b.VA,'V')}`],
+      ['Branch currents',`I(R1) = (V1 − VA)/R1 = ${eng(b.I1,'A')}\nI(R2) = VA/R2 = ${eng(b.I2,'A')}\nI(R3) = (VA − V2)/R3 = ${eng(b.I3,'A')}`]];
+    else if(view==='mesh') st=[
+      ['Assign clockwise mesh currents I₁ (left) and I₂ (right)',''],
+      ['KVL in mesh 1',`V1 − I₁R1 − (I₁ − I₂)R2 = 0  →  (R1+R2)I₁ − R2·I₂ = V1\n${n4(v.R1+v.R2)} I₁ − ${n4(v.R2)} I₂ = ${n4(v.V1)}`],
+      ['KVL in mesh 2',`−(I₂ − I₁)R2 − I₂R3 − V2 = 0  →  −R2·I₁ + (R2+R3)I₂ = −V2\n−${n4(v.R2)} I₁ + ${n4(v.R2+v.R3)} I₂ = ${n4(-v.V2)}`],
+      ['Solve with Cramer\'s rule',`Δ  = (R1+R2)(R2+R3) − R2² = ${n4(D)}\nΔ₁ = V1(R2+R3) − R2·V2 = ${n4(v.V1*(v.R2+v.R3)-v.R2*v.V2)}\nΔ₂ = −V2(R1+R2) + R2·V1 = ${n4(-v.V2*(v.R1+v.R2)+v.R2*v.V1)}`],
+      ['Mesh currents',`I₁ = Δ₁/Δ = ${eng(b.I1,'A')}\nI₂ = Δ₂/Δ = ${eng(b.I3,'A')}\nI(R2) = I₁ − I₂ = ${eng(b.I2,'A')}`]];
+    else st=[
+      ['V1 acting alone (V2 replaced by a short circuit)',`R_eq = R1 + (R2∥R3) = ${n4(v.R1+v.R2*v.R3/(v.R2+v.R3))} Ω\nI(R1)' = ${eng(a.I1,'A')}   I(R2)' = ${eng(a.I2,'A')}   I(R3)' = ${eng(a.I3,'A')}`],
+      ['V2 acting alone (V1 replaced by a short circuit)',`R_eq = R3 + (R1∥R2) = ${n4(v.R3+v.R1*v.R2/(v.R1+v.R2))} Ω\nI(R1)" = ${eng(c.I1,'A')}   I(R2)" = ${eng(c.I2,'A')}   I(R3)" = ${eng(c.I3,'A')}`],
+      ['Add the individual responses (algebraic sum)',`I(R1) = ${n4(a.I1)} + (${n4(c.I1)}) = ${eng(b.I1,'A')}\nI(R2) = ${n4(a.I2)} + (${n4(c.I2)}) = ${eng(b.I2,'A')}\nI(R3) = ${n4(a.I3)} + (${n4(c.I3)}) = ${eng(b.I3,'A')}`],
+      ['Note','Superposition works for currents and voltages, but not for power: P is not linear (P = I²R).']];
+    $('steps').innerHTML=steps(st);
+    barChart($('ch1'),{groups:['I(R1)','I(R2)','I(R3)'],yl:'Current (A)',series:[
+      {label:'V1 alone',vals:[a.I1,a.I2,a.I3],color:css('--cyan')},{label:'V2 alone',vals:[c.I1,c.I2,c.I3],color:css('--violet')},{label:'Both (sum)',vals:[b.I1,b.I2,b.I3],color:css('--amber')}]});
+  },
+  theory:`KCL: Σ currents entering a node = Σ currents leaving.
+KVL: Σ voltage rises = Σ voltage drops around any closed loop.
+Superposition: In a linear bilateral network, the response = sum of responses due to each source acting alone (voltage sources → short, current sources → open).`
+});
+
+/* ---------- 3. Star–Delta ---------- */
+MODULES.push({
+  id:'stardelta', grp:'DC Network Theorems', ic:'Y-Δ', title:'Star ↔ Delta Transformation',
+  tag:'Module 1 · DC Circuits',
+  intro:'Convert a delta (Δ) network into its equivalent star (Y), or a star into a delta. The table proves the two are equivalent: the resistance between every pair of terminals is the same.',
+  params:[
+    {k:'mode',label:'Conversion',type:'sel',v:'d2y',opts:[['d2y','Delta → Star (Δ → Y)'],['y2d','Star → Delta (Y → Δ)']]},
+    {k:'a',label:'R_AB',unit:'Ω',min:0.1,max:100,step:0.1,v:10,hardMin:0.001},
+    {k:'b',label:'R_BC',unit:'Ω',min:0.1,max:100,step:0.1,v:20,hardMin:0.001},
+    {k:'c',label:'R_CA',unit:'Ω',min:0.1,max:100,step:0.1,v:30,hardMin:0.001},
+  ],
+  viz(){return {tabs:[],def:''};},
+  chartHtml:`<h3><span class="dot"></span>Equivalence check: resistance between terminals</h3><div id="eqtab"></div><div class="note">The third terminal is left open each time. Matching columns show the two networks are electrically identical.</div>`,
+  update(v){
+    const api=current.api;
+    let Rab,Rbc,Rca,Ra,Rb,Rc,st;
+    if(v.mode==='d2y'){
+      api.label('a','Delta R_AB'); api.label('b','Delta R_BC'); api.label('c','Delta R_CA');
+      Rab=v.a;Rbc=v.b;Rca=v.c; const Sm=Rab+Rbc+Rca; Ra=Rab*Rca/Sm; Rb=Rab*Rbc/Sm; Rc=Rbc*Rca/Sm;
+      st=[['Sum of delta resistances',`ΣR = R_AB + R_BC + R_CA = ${n4(Rab)} + ${n4(Rbc)} + ${n4(Rca)} = ${n4(Sm)} Ω`],
+        ['Star resistance at A = (product of the two adjacent Δ arms) / ΣR',`R_A = R_AB·R_CA / ΣR = ${n4(Rab)}×${n4(Rca)}/${n4(Sm)} = ${eng(Ra,'Ω')}`],
+        ['Star resistance at B',`R_B = R_AB·R_BC / ΣR = ${n4(Rab)}×${n4(Rbc)}/${n4(Sm)} = ${eng(Rb,'Ω')}`],
+        ['Star resistance at C',`R_C = R_BC·R_CA / ΣR = ${n4(Rbc)}×${n4(Rca)}/${n4(Sm)} = ${eng(Rc,'Ω')}`]];
+    } else {
+      api.label('a','Star R_A'); api.label('b','Star R_B'); api.label('c','Star R_C');
+      Ra=v.a;Rb=v.b;Rc=v.c; const P=Ra*Rb+Rb*Rc+Rc*Ra; Rab=P/Rc; Rbc=P/Ra; Rca=P/Rb;
+      st=[['Sum of pairwise products',`ΣRR = R_A·R_B + R_B·R_C + R_C·R_A = ${n4(P)} Ω²`],
+        ['Delta arm = ΣRR / (star resistance opposite to that arm)',`R_AB = ΣRR / R_C = ${n4(P)}/${n4(Rc)} = ${eng(Rab,'Ω')}`],
+        ['',`R_BC = ΣRR / R_A = ${n4(P)}/${n4(Ra)} = ${eng(Rbc,'Ω')}`],
+        ['',`R_CA = ΣRR / R_B = ${n4(P)}/${n4(Rb)} = ${eng(Rca,'Ω')}`]];
+    }
+    const d2y=v.mode==='d2y', dc=d2y?'':'hot', yc=d2y?'hot':'';
+    const A=[170,40],B=[50,250],C=[290,250];
+    let g='';
+    g+=S.res(A[0],A[1],B[0],B[1],'R_AB',eng(Rab,'Ω'),dc,-1)+S.res(B[0],B[1],C[0],C[1],'R_BC',eng(Rbc,'Ω'),dc,1)+S.res(C[0],C[1],A[0],A[1],'R_CA',eng(Rca,'Ω'),dc,-1);
+    g+=S.term(A[0],A[1],'A')+S.term(B[0],B[1])+S.term(C[0],C[1])+S.txt(B[0]-14,B[1]+5,'B','st','end')+S.txt(C[0]+14,C[1]+5,'C','st','start');
+    g+=S.txt(170,292,'Delta (Δ)'+(d2y?' — given':' — result'),'sm');
+    const O=[530,170],A2=[530,40],B2=[410,250],C2=[650,250];
+    g+=S.res(A2[0],A2[1],O[0],O[1],'R_A',eng(Ra,'Ω'),yc,1)+S.res(O[0],O[1],B2[0],B2[1],'R_B',eng(Rb,'Ω'),yc,1)+S.res(O[0],O[1],C2[0],C2[1],'R_C',eng(Rc,'Ω'),yc,-1);
+    g+=S.node(O[0],O[1])+S.term(A2[0],A2[1],'A')+S.term(B2[0],B2[1])+S.term(C2[0],C2[1])+S.txt(B2[0]-14,B2[1]+5,'B','st','end')+S.txt(C2[0]+14,C2[1]+5,'C','st','start');
+    g+=S.txt(530,292,'Star (Y)'+(d2y?' — result':' — given'),'sm');
+    g+=S.arrow(330,150,385,150,css('--amber'),3)+(d2y?'':S.arrow(385,170,330,170,css('--cyan'),3));
+    $('viz').innerHTML=S.svg(700,305,g);
+    $('res').innerHTML=results([['R_AB',eng(Rab,'Ω'),d2y?'':'hl'],['R_BC',eng(Rbc,'Ω'),d2y?'':'hl'],['R_CA',eng(Rca,'Ω'),d2y?'':'hl'],
+      ['R_A',eng(Ra,'Ω'),d2y?'hl':''],['R_B',eng(Rb,'Ω'),d2y?'hl':''],['R_C',eng(Rc,'Ω'),d2y?'hl':'']]);
+    $('steps').innerHTML=steps(st);
+    const par=(x,y)=>x*y/(x+y);
+    const rows=[['A–B (C open)',par(Rab,Rbc+Rca),Ra+Rb],['B–C (A open)',par(Rbc,Rab+Rca),Rb+Rc],['C–A (B open)',par(Rca,Rab+Rbc),Rc+Ra]];
+    $('eqtab').innerHTML=`<table class="tb"><tr><th>Terminals</th><th>Delta network</th><th>Star network</th><th></th></tr>${rows.map(r=>`<tr><td style="font-family:var(--sans)">${r[0]}</td><td>${eng(r[1],'Ω')}</td><td>${eng(r[2],'Ω')}</td><td style="color:var(--green)">${Math.abs(r[1]-r[2])<1e-9*r[1]+1e-12?'✓ equal':'✗'}</td></tr>`).join('')}</table>`;
+  },
+  theory:`Δ → Y :  R_A = R_AB·R_CA / ΣR,  R_B = R_AB·R_BC / ΣR,  R_C = R_BC·R_CA / ΣR
+Y → Δ :  R_AB = (R_A R_B + R_B R_C + R_C R_A) / R_C   (and cyclically)
+Balanced case:  R_Y = R_Δ / 3`
+});
+
+/* ---------- 4. Series RLC ---------- */
+MODULES.push({
+  id:'rlc', grp:'AC Circuits', ic:'RLC', title:'Series RLC Circuit & Resonance',
+  tag:'Module 2 · Single-phase AC',
+  intro:'Adjust R, L, C and the supply frequency. Watch the impedance, phase angle, power factor and phasor diagram change, and tune to the resonant frequency, where X<sub>L</sub> = X<sub>C</sub> and the current reaches its peak.',
+  params:[
+    {k:'V',label:'Supply voltage (RMS)',unit:'V',min:1,max:440,step:1,v:230},
+    {k:'f',label:'Frequency f',unit:'Hz',min:1,max:500,step:0.5,v:50,hardMin:0.001},
+    {k:'R',label:'Resistance R',unit:'Ω',min:0.5,max:200,step:0.5,v:10,hardMin:0.001},
+    {k:'L',label:'Inductance L',unit:'mH',min:1,max:1000,step:1,v:100,hardMin:0.0001},
+    {k:'C',label:'Capacitance C',unit:'µF',min:1,max:1000,step:1,v:150,hardMin:0.0001},
+  ],
+  viz(){return {tabs:[['circ','Circuit'],['ph','Phasor diagram']],def:'circ'};},
+  chartHtml:`<h3><span class="dot"></span>Frequency response & waveforms</h3><div class="chartwrap"><canvas id="ch1"></canvas></div><div class="chartwrap"><canvas id="ch2"></canvas></div>`,
+  actions:[{label:'Tune to resonance f = f₀',fn(v,api){ const f0=1/(2*PI*Math.sqrt(v.L*1e-3*v.C*1e-6)); api.set('f',+f0.toFixed(3)); }}],
+  calc(v){
+    const L=v.L*1e-3,C=v.C*1e-6,w=2*PI*v.f,XL=w*L,XC=1/(w*C),X=XL-XC,Z=Math.hypot(v.R,X),phi=Math.atan2(X,v.R),I=v.V/Z;
+    const f0=1/(2*PI*Math.sqrt(L*C)),Q=Math.sqrt(L/C)/v.R,BW=v.R/(2*PI*L);
+    const a=v.R/(2*L), w0=1/Math.sqrt(L*C), f1=(-a+Math.sqrt(a*a+w0*w0))/(2*PI), f2=(a+Math.sqrt(a*a+w0*w0))/(2*PI);
+    return {L,C,w,XL,XC,X,Z,phi,I,VR:I*v.R,VL:I*XL,VC:I*XC,P:I*I*v.R,Qr:I*I*X,S:v.V*I,pf:Math.cos(phi),f0,Q,BW,f1,f2};
+  },
+  update(v,view){
+    const r=this.calc(v);
+    const nature=Math.abs(r.X)<1e-6*r.Z?'Resistive (resonance)':r.X>0?'Inductive (lagging)':'Capacitive (leading)';
+    let g='';
+    if(view==='circ'){
+      g+=S.vs(60,70,240,'V',eng(v.V,'V')+' ~')+S.txt(60,280,eng(v.f,'Hz'),'sm');
+      g+=S.wire([[60,70],[100,70]])+S.res(100,70,240,70,'R',eng(v.R,'Ω'))+S.wire([[240,70],[280,70]]);
+      g+=S.ind(280,430,70,'L',eng(v.L,'mH'))+S.wire([[430,70],[480,70]]);
+      g+=S.cap(480,600,70,'C',eng(v.C,'µF'))+S.wire([[600,70],[640,70],[640,240],[60,240]]);
+      g+=S.flow([[60,240],[60,70],[640,70],[640,240],[60,240]],r.I,Math.max(r.I,v.V/v.R*0.6));
+      g+=S.txt(170,110,'VR = '+eng(r.VR,'V'),'sc')+S.txt(355,110,'VL = '+eng(r.VL,'V'),'sc')+S.txt(540,110,'VC = '+eng(r.VC,'V'),'sc');
+      g+=S.txt(350,160,'I = '+eng(r.I,'A')+'   Z = '+eng(r.Z,'Ω'),'sg')+S.txt(350,185,'XL = '+eng(r.XL,'Ω')+'   XC = '+eng(r.XC,'Ω'),'sm');
+      g+=S.txt(350,210,nature,'sm');
+      $('viz').innerHTML=S.svg(700,300,g);
+    } else {
+      const ox=230,oy=160,mx=Math.max(r.VR,r.VL,r.VC,v.V), k=125/mx;
+      g+=`<line x1="40" y1="${oy}" x2="660" y2="${oy}" stroke="#26314f"/><line x1="${ox}" y1="20" x2="${ox}" y2="300" stroke="#26314f"/>`;
+      g+=S.arrow(ox,oy,ox+r.VR*k,oy,css('--cyan'),3,'VR')+S.arrow(ox,oy,ox,oy-r.VL*k,css('--pink'),3,'VL')+S.arrow(ox,oy,ox,oy+r.VC*k,css('--violet'),3,'VC');
+      const vx=ox+r.VR*k, vy=oy-(r.VL-r.VC)*k;
+      g+=`<line x1="${ox+r.VR*k}" y1="${oy}" x2="${vx}" y2="${vy}" stroke="#8d99b8" stroke-dasharray="4 4"/>`;
+      g+=S.arrow(ox,oy,vx,vy,css('--amber'),3.4,'V');
+      const Ik=Math.min(125,60+ r.I/(v.V/v.R)*65);
+      g+=S.arrow(ox-120,oy+40,ox-120+Ik,oy+40,css('--green'),2,'');
+      g+=S.txt(ox-120+Ik/2,oy+58,'I (reference direction)','sg');
+      if(Math.abs(r.phi)>0.02){ const rr=48,a=-r.phi; g+=`<path d="M${ox+rr} ${oy} A${rr} ${rr} 0 0 ${r.phi>0?0:1} ${ox+rr*Math.cos(a)} ${oy+rr*Math.sin(a)}" fill="none" stroke="var(--amber)" stroke-width="1.5"/>`+S.txt(ox+rr+8,oy+(r.phi>0?-10:22),'φ = '+fx(r.phi*DEG,1)+'°','sv','start'); }
+      g+=S.txt(480,60,'φ = '+fx(r.phi*DEG,2)+'°','sv','start')+S.txt(480,82,'pf = '+fx(r.pf,3),'sv','start')+S.txt(480,104,nature,'sm','start');
+      $('viz').innerHTML=S.svg(700,310,g);
+    }
+    $('res').innerHTML=results([
+      ['Inductive reactance XL',eng(r.XL,'Ω')],['Capacitive reactance XC',eng(r.XC,'Ω')],['Impedance |Z|',eng(r.Z,'Ω'),'hl'],
+      ['Current I',eng(r.I,'A'),'hl'],['Phase angle φ',fx(r.phi*DEG,2)+'°'],['Power factor',fx(r.pf,3)+(r.X>1e-9?' lag':r.X<-1e-9?' lead':'')],
+      ['Active power P',eng(r.P,'W')],['Reactive power Q',eng(r.Qr,'VAR')],['Apparent power S',eng(r.S,'VA')],
+      ['Resonant freq f₀',eng(r.f0,'Hz'),'ok'],['Quality factor Q',fx(r.Q,3),'ok'],['Bandwidth',eng(r.BW,'Hz'),'ok']]);
+    $('steps').innerHTML=steps([
+      ['Reactances at f = '+eng(v.f,'Hz'),`ω = 2πf = ${n4(r.w)} rad/s\nXL = ωL = ${n4(r.w)} × ${n4(r.L)} = ${eng(r.XL,'Ω')}\nXC = 1/(ωC) = 1/(${n4(r.w)} × ${n4(r.C)}) = ${eng(r.XC,'Ω')}`],
+      ['Impedance',`Z = R + j(XL − XC) = ${n4(v.R)} + j(${n4(r.X)}) Ω\n|Z| = √(R² + (XL−XC)²) = ${eng(r.Z,'Ω')}\nφ = tan⁻¹((XL−XC)/R) = ${fx(r.phi*DEG,2)}°  → ${nature}`],
+      ['Current and voltage drops',`I = V/|Z| = ${n4(v.V)}/${n4(r.Z)} = ${eng(r.I,'A')}\nVR = I·R = ${eng(r.VR,'V')},  VL = I·XL = ${eng(r.VL,'V')},  VC = I·XC = ${eng(r.VC,'V')}\nCheck: V = √(VR² + (VL−VC)²) = ${eng(Math.hypot(r.VR,r.VL-r.VC),'V')}`],
+      ['Power',`P = V·I·cosφ = ${eng(r.P,'W')}\nQ = V·I·sinφ = ${eng(r.Qr,'VAR')}\nS = V·I = ${eng(r.S,'VA')}`],
+      ['Resonance',`f₀ = 1/(2π√(LC)) = ${eng(r.f0,'Hz')}\nQ = (1/R)√(L/C) = ${fx(r.Q,3)}    BW = R/(2πL) = ${eng(r.BW,'Hz')}\nHalf-power frequencies: f₁ = ${eng(r.f1,'Hz')},  f₂ = ${eng(r.f2,'Hz')}\nAt f₀: I_max = V/R = ${eng(v.V/v.R,'A')}`]]);
+    const fs=logspace(Math.max(r.f0/50,0.1),r.f0*50,400);
+    const Ii=fs.map(f=>{const w=2*PI*f;return v.V/Math.hypot(v.R,w*r.L-1/(w*r.C));});
+    lineChart($('ch1'),{x:fs,logx:true,series:[{y:Ii,color:css('--amber'),label:'Current I (A)'}],xl:'Frequency (Hz, log scale)',yl:'Current (A)',
+      vlines:[{x:r.f0,color:css('--green'),label:'f₀ = '+eng(r.f0,'Hz')}],markers:[{x:v.f,y:r.I,color:css('--pink'),label:'operating point'},{x:r.f1,y:v.V/v.R/Math.SQRT2,color:css('--cyan'),label:''},{x:r.f2,y:v.V/v.R/Math.SQRT2,color:css('--cyan'),label:'half-power'}]});
+    const ts=linspace(0,2/v.f,300);
+    lineChart($('ch2'),{x:ts.map(t=>t*1000),series:[{y:ts.map(t=>Math.sin(r.w*t)),color:css('--cyan'),label:'v(t)/Vm'},{y:ts.map(t=>Math.sin(r.w*t-r.phi)),color:css('--amber'),label:'i(t)/Im'}],xl:'Time (ms)',yl:'Normalised amplitude',ymin:-1.15,ymax:1.15});
+  },
+  theory:`XL = 2πfL,  XC = 1/(2πfC),  Z = √(R² + (XL − XC)²),  φ = tan⁻¹((XL − XC)/R)
+At resonance: XL = XC,  f₀ = 1/(2π√LC),  Z = R (minimum),  I = V/R (maximum),  pf = 1
+Quality factor Q = ω₀L/R = (1/R)√(L/C),  Bandwidth = f₂ − f₁ = f₀/Q = R/(2πL)`
+});
+
+/* ---------- 5. Three-phase ---------- */
+MODULES.push({
+  id:'threephase', grp:'AC Circuits', ic:'3φ', title:'Balanced Three-Phase Systems & Two-Wattmeter Method',
+  tag:'Module 2 · Three-phase AC',
+  intro:'A balanced load connected in star or delta. See the line and phase relationships, the three-phase power, and the two wattmeter readings for any power factor.',
+  params:[
+    {k:'conn',label:'Load connection',type:'sel',v:'star',opts:[['star','Star (Y)'],['delta','Delta (Δ)']]},
+    {k:'VL',label:'Line voltage VL',unit:'V',min:100,max:11000,step:10,v:400},
+    {k:'R',label:'Resistance per phase R',unit:'Ω',min:0,max:100,step:0.5,v:8},
+    {k:'X',label:'Reactance per phase X (+ind / −cap)',unit:'Ω',min:-100,max:100,step:0.5,v:6,hardMin:-1e6},
+  ],
+  viz(){return {tabs:[['circ','Connection'],['ph','Phasor diagram']],def:'circ'};},
+  chartHtml:`<h3><span class="dot"></span>Three-phase waveforms (phase voltages)</h3><div class="chartwrap"><canvas id="ch1"></canvas></div><h3 style="margin-top:14px"><span class="dot"></span>Wattmeter readings vs power factor angle</h3><div class="chartwrap"><canvas id="ch2"></canvas></div>`,
+  update(v,view){
+    const Z=Math.hypot(v.R,v.X); if(Z===0){ $('res').innerHTML=results([['Error','Z = 0','warn']]); return; }
+    const phi=Math.atan2(v.X,v.R), pf=Math.cos(phi), star=v.conn==='star';
+    const Vph=star?v.VL/Math.sqrt(3):v.VL, Iph=Vph/Z, IL=star?Iph:Math.sqrt(3)*Iph;
+    const P=Math.sqrt(3)*v.VL*IL*pf, Q=Math.sqrt(3)*v.VL*IL*Math.sin(phi), Sx=Math.sqrt(3)*v.VL*IL;
+    const W1=v.VL*IL*Math.cos(PI/6-phi), W2=v.VL*IL*Math.cos(PI/6+phi);
+    let g='';
+    const cols=[css('--red'),css('--amber'),css('--cyan')], names=['R','Y','B'];
+    if(view==='circ'){
+      const zbox=(x1,y1,x2,y2)=>{const mx=(x1+x2)/2,my=(y1+y2)/2,a=Math.atan2(y2-y1,x2-x1)*DEG;return `<line class="w" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/><rect x="${mx-26}" y="${my-11}" width="52" height="22" rx="4" fill="var(--bg2)" stroke="var(--text)" stroke-width="2" transform="rotate(${a} ${mx} ${my})"/><text class="sm" x="${mx}" y="${my+4}" text-anchor="middle" transform="rotate(${Math.abs(a)>90?a+180:a} ${mx} ${my})">Z</text>`;};
+      const ys=[60,150,240];
+      ys.forEach((y,i)=>{ g+=`<line x1="30" y1="${y}" x2="${star?300:300}" y2="${y}" stroke="${cols[i]}" stroke-width="2.4"/>`+S.txt(22,y+5,names[i],'st','end'); });
+      g+=S.txt(150,40,'IL = '+eng(IL,'A'),'sg');
+      ys.forEach((y,i)=>g+=S.flow([[30,y],[300,y]],IL,IL));
+      if(star){
+        const O=[520,150], P3=[[440,60],[440,240],[620,150]];
+        g+=S.wire([[300,60],[440,60]])+S.wire([[300,240],[440,240]])+S.wire([[300,150],[380,150],[380,290],[650,290],[650,150],[620,150]]);
+        P3.forEach(p=>g+=zbox(p[0],p[1],O[0],O[1]));
+        g+=S.node(O[0],O[1])+S.txt(O[0],O[1]+28,'N','sm');
+        g+=S.txt(520,30,'Vph = VL/√3 = '+eng(Vph,'V'),'sv')+S.txt(520,325,'Iph = IL = '+eng(Iph,'A'),'sc');
+      } else {
+        const A=[520,50],B=[420,250],C=[620,250];
+        g+=S.wire([[300,60],[400,60],[400,30],[520,30],[A[0],A[1]]])+S.wire([[300,150],[360,150],[360,250],[B[0],B[1]]])+S.wire([[300,240],[340,240],[340,300],[660,300],[660,250],[C[0],C[1]]]);
+        g+=zbox(A[0],A[1],B[0],B[1])+zbox(B[0],B[1],C[0],C[1])+zbox(C[0],C[1],A[0],A[1]);
+        [A,B,C].forEach(p=>g+=S.node(p[0],p[1]));
+        g+=S.txt(520,175,'Vph = VL','sv')+S.txt(520,195,eng(Vph,'V'),'sv')+S.txt(520,325,'Iph = IL/√3 = '+eng(Iph,'A'),'sc');
+      }
+      g+=S.txt(150,325,'VL = '+eng(v.VL,'V'),'sv');
+      $('viz').innerHTML=S.svg(700,340,g);
+    } else {
+      const ox=330,oy=170,kv=120;
+      g+=`<circle cx="${ox}" cy="${oy}" r="${kv}" fill="none" stroke="#26314f" stroke-dasharray="3 5"/>`;
+      [90,-30,210].forEach((d,i)=>{ const a=d/DEG, x=ox+kv*Math.cos(a), y=oy-kv*Math.sin(a); g+=S.arrow(ox,oy,x,y,cols[i],3,'V'+names[i]);
+        const ai=a-phi, xi=ox+80*Math.cos(ai), yi=oy-80*Math.sin(ai); g+=S.arrow(ox,oy,xi,yi,cols[i],1.6,'I'+names[i],'sm'); });
+      g+=S.txt(560,60,'Phase sequence R → Y → B','sm','start')+S.txt(560,82,'Currents lag by φ = '+fx(phi*DEG,1)+'°','sv','start')+S.txt(560,104,'(thin arrows: phase currents)','sm','start');
+      $('viz').innerHTML=S.svg(760,330,g);
+    }
+    $('res').innerHTML=results([
+      ['Phase impedance |Z|',eng(Z,'Ω')],['Power factor',fx(pf,3)+(v.X>0?' lag':v.X<0?' lead':'')],['Phase voltage Vph',eng(Vph,'V'),'hl'],
+      ['Phase current Iph',eng(Iph,'A'),'hl'],['Line current IL',eng(IL,'A'),'hl'],['Active power P',eng(P,'W'),'ok'],
+      ['Reactive power Q',eng(Q,'VAR')],['Apparent power S',eng(Sx,'VA')],['Wattmeter W1',eng(W1,'W')],['Wattmeter W2',eng(W2,'W')+(W2<0?' (reversed)':'')]]);
+    $('steps').innerHTML=steps([
+      ['Impedance per phase',`Z = R + jX = ${n4(v.R)} + j${n4(v.X)} Ω,  |Z| = ${eng(Z,'Ω')}\nφ = tan⁻¹(X/R) = ${fx(phi*DEG,2)}°,  cosφ = ${fx(pf,4)}`],
+      [star?'Star connection: Vph = VL/√3, IL = Iph':'Delta connection: Vph = VL, IL = √3·Iph',
+        star?`Vph = ${n4(v.VL)}/√3 = ${eng(Vph,'V')}\nIph = Vph/|Z| = ${eng(Iph,'A')} = IL`:`Vph = ${eng(Vph,'V')}\nIph = Vph/|Z| = ${eng(Iph,'A')}\nIL = √3 × ${n4(Iph)} = ${eng(IL,'A')}`],
+      ['Three-phase power',`P = √3·VL·IL·cosφ = √3 × ${n4(v.VL)} × ${n4(IL)} × ${fx(pf,4)} = ${eng(P,'W')}\nQ = √3·VL·IL·sinφ = ${eng(Q,'VAR')}\nS = √3·VL·IL = ${eng(Sx,'VA')}`],
+      ['Two-wattmeter method',`W1 = VL·IL·cos(30° − φ) = ${eng(W1,'W')}\nW2 = VL·IL·cos(30° + φ) = ${eng(W2,'W')}\nW1 + W2 = ${eng(W1+W2,'W')}  (= P ✓)`],
+      ['Power factor from wattmeter readings',`tanφ = √3 (W1 − W2)/(W1 + W2) = ${fx(Math.sqrt(3)*(W1-W2)/(W1+W2),4)}\nφ = ${fx(Math.atan(Math.sqrt(3)*(W1-W2)/(W1+W2))*DEG,2)}°   pf = ${fx(Math.cos(Math.atan(Math.sqrt(3)*(W1-W2)/(W1+W2))),4)}`]]);
+    const ts=linspace(0,0.04,300), Vm=Vph*Math.SQRT2, w=2*PI*50;
+    lineChart($('ch1'),{x:ts.map(t=>t*1000),series:[0,1,2].map(i=>({y:ts.map(t=>Vm*Math.sin(w*t-i*2*PI/3)),color:cols[i],label:'v'+names[i]})),xl:'Time (ms) at 50 Hz',yl:'Phase voltage (V)'});
+    const ph=linspace(0,90,181), K=v.VL*IL;
+    lineChart($('ch2'),{x:ph,series:[{y:ph.map(d=>K*Math.cos((30-d)/DEG)),color:css('--green'),label:'W1'},{y:ph.map(d=>K*Math.cos((30+d)/DEG)),color:css('--violet'),label:'W2'}],xl:'Power factor angle φ (°)  ·  W2 = 0 at φ = 60° (pf 0.5)',yl:'Reading (W)',
+      markers:[{x:Math.abs(phi*DEG),y:K*Math.cos(PI/6-Math.abs(phi)),color:css('--green'),label:''},{x:Math.abs(phi*DEG),y:K*Math.cos(PI/6+Math.abs(phi)),color:css('--pink'),label:'now'}]});
+  },
+  theory:`Star:  VL = √3·Vph,  IL = Iph        Delta:  VL = Vph,  IL = √3·Iph
+P = √3·VL·IL·cosφ = 3·Vph·Iph·cosφ
+Two-wattmeter: W1 + W2 = P,  tanφ = √3 (W1 − W2)/(W1 + W2)
+pf = 1 → W1 = W2;  pf = 0.5 → W2 = 0;  pf < 0.5 → W2 reads negative`
+});
+
+/* ---------- 6. Transformer ---------- */
+MODULES.push({
+  id:'transformer', grp:'Electrical Machines', ic:'TX', title:'Single-Phase Transformer: Efficiency & Regulation',
+  tag:'Module 3 · Transformer',
+  intro:'Enter the rating, the open-circuit (OC) and short-circuit (SC) test data, and the load conditions. The simulator works out the equivalent circuit parameters, efficiency, the load at which efficiency is maximum, and voltage regulation.',
+  params:[
+    {k:'S',label:'Rating',unit:'kVA',min:1,max:500,step:1,v:10,hardMin:0.001},
+    {k:'V1',label:'Primary voltage V1 (HV)',unit:'V',min:100,max:11000,step:10,v:2000,hardMin:1},
+    {k:'V2',label:'Secondary voltage V2 (LV)',unit:'V',min:10,max:2000,step:5,v:200,hardMin:1},
+    {k:'Pi',label:'OC test: core loss Pi',unit:'W',min:1,max:5000,step:1,v:120},
+    {k:'Vsc',label:'SC test: voltage Vsc (HV side)',unit:'V',min:1,max:1000,step:1,v:60,hardMin:0.001},
+    {k:'Isc',label:'SC test: current Isc',unit:'A',min:0.1,max:200,step:0.1,v:5,hardMin:0.001},
+    {k:'Psc',label:'SC test: power Psc',unit:'W',min:1,max:10000,step:1,v:180},
+    {k:'x',label:'Load (fraction of full load)',unit:'× FL',min:0.05,max:1.5,step:0.05,v:1,hardMin:0.0001},
+    {k:'pf',label:'Load power factor',unit:'',min:0.1,max:1,step:0.01,v:0.8,hardMin:0.0001},
+    {k:'pft',label:'Power factor type',type:'sel',v:'lag',opts:[['lag','Lagging (inductive)'],['lead','Leading (capacitive)']]},
+  ],
+  viz(){return {tabs:[],def:''};},
+  chartHtml:`<h3><span class="dot"></span>Efficiency vs load</h3><div class="chartwrap"><canvas id="ch1"></canvas></div><div class="note">Efficiency is maximum when copper loss = core loss.</div>`,
+  actions:[{label:'Set load for max efficiency',fn(v,api){ const I1=v.S*1000/v.V1, Pcu=I1*I1*v.Psc/(v.Isc*v.Isc); api.set('x',+Math.sqrt(v.Pi/Pcu).toFixed(4)); }}],
+  update(v){
+    const a=v.V1/v.V2, I1=v.S*1000/v.V1, I2=v.S*1000/v.V2;
+    const Req=v.Psc/(v.Isc**2), Zeq=v.Vsc/v.Isc, Xeq=Math.sqrt(Math.max(0,Zeq*Zeq-Req*Req));
+    const PcuFL=I1*I1*Req, Pcu=v.x*v.x*PcuFL, out=v.x*v.S*1000*v.pf, eta=out/(out+v.Pi+Pcu)*100;
+    const xm=Math.sqrt(v.Pi/PcuFL), outm=xm*v.S*1000*v.pf, etam=outm/(outm+2*v.Pi)*100;
+    const sinp=Math.sqrt(1-v.pf*v.pf), sg=v.pft==='lag'?1:-1;
+    const VR=v.x*I1*(Req*v.pf+sg*Xeq*sinp)/v.V1*100;
+    const bad=Zeq<Req;
+    let g='';
+    g+=`<rect x="250" y="40" width="200" height="200" rx="6" fill="none" stroke="#5a6a95" stroke-width="18"/>`;
+    g+=S.txt(350,145,'Φ (mutual flux)','sm');
+    g+=`<path d="M350 62 L430 62 L430 218 L270 218 L270 62 Z" fill="none" stroke="var(--violet)" stroke-width="1.4" stroke-dasharray="5 5"/>`;
+    const coil=(x,y0,n,side)=>{let d='';for(let i=0;i<n;i++){const y=y0+i*18;d+=`<ellipse cx="${x}" cy="${y}" rx="18" ry="6" fill="none" stroke="${side?'var(--amber)':'var(--cyan)'}" stroke-width="2.4"/>`;}return d;};
+    const n1=Math.max(3,Math.min(8,Math.round(3+Math.log2(a+1)))), n2=Math.max(2,Math.min(8,Math.round(n1/Math.max(1,a)*1.5+1)));
+    g+=coil(250,140-n1*9+9,n1,0)+coil(450,140-n2*9+9,n2,1);
+    g+=S.wire([[232,140-n1*9+9],[150,140-n1*9+9],[150,70],[90,70]])+S.wire([[232,140+n1*9-9],[150,140+n1*9-9],[150,240],[90,240]]);
+    g+=S.vs(90,70,240,'V1',eng(v.V1,'V'));
+    g+=S.wire([[468,140-n2*9+9],[560,140-n2*9+9],[560,70],[620,70]])+S.wire([[468,140+n2*9-9],[560,140+n2*9-9],[560,240],[620,240]]);
+    g+=S.res(620,70,620,240,'Load',fx(v.x*100,0)+'% @ '+fx(v.pf,2),'load',-1);
+    const Ia=v.x*I1, Ib=v.x*I2;
+    g+=S.flow([[90,240],[90,70],[150,70]],Ia,Math.max(Ia,I1))+S.flow([[560,70],[620,70],[620,240],[560,240]],Ib,Math.max(Ib,I2));
+    g+=S.txt(250,30,'N₁ (HV)','sc')+S.txt(450,30,'N₂ (LV)','sv')+S.txt(350,275,'a = N₁/N₂ = '+fx(a,3)+'   ·   I₁ = '+eng(Ia,'A')+'   ·   I₂ = '+eng(Ib,'A'),'sm');
+    $('viz').innerHTML=S.svg(700,290,g);
+    $('res').innerHTML=results([
+      ['Turns ratio a = N₁/N₂',fx(a,3)],['Rated I₁ (HV)',eng(I1,'A')],['Rated I₂ (LV)',eng(I2,'A')],
+      ['R_eq (HV side)',eng(Req,'Ω')],['X_eq (HV side)',bad?'Vsc too low':eng(Xeq,'Ω'),bad?'warn':''],['Full-load Cu loss',eng(PcuFL,'W')],
+      ['Cu loss at this load',eng(Pcu,'W')],['Output power',eng(out,'W')],['Efficiency η',fx(eta,2)+' %','hl'],
+      ['Load for η_max',fx(xm*100,1)+' % FL','ok'],['Maximum efficiency',fx(etam,2)+' %','ok'],['Voltage regulation',fx(VR,2)+' %','hl']]);
+    $('steps').innerHTML=steps([
+      ['Turns ratio and rated currents',`a = V1/V2 = ${n4(v.V1)}/${n4(v.V2)} = ${fx(a,3)}\nI₁ = S/V1 = ${n4(v.S*1000)}/${n4(v.V1)} = ${eng(I1,'A')}     I₂ = S/V2 = ${eng(I2,'A')}`],
+      ['Equivalent circuit from SC test (referred to HV side)',`R_eq = Psc/Isc² = ${n4(v.Psc)}/${n4(v.Isc)}² = ${eng(Req,'Ω')}\nZ_eq = Vsc/Isc = ${n4(v.Vsc)}/${n4(v.Isc)} = ${eng(Zeq,'Ω')}\nX_eq = √(Z_eq² − R_eq²) = ${eng(Xeq,'Ω')}`],
+      ['Losses',`Core loss (constant, OC test) Pi = ${eng(v.Pi,'W')}\nFull-load Cu loss = I₁²·R_eq = ${eng(PcuFL,'W')}\nCu loss at x = ${n4(v.x)}:  x²·Pcu_FL = ${eng(Pcu,'W')}`],
+      ['Efficiency',`η = x·S·cosφ / (x·S·cosφ + Pi + x²·Pcu_FL)\n  = ${n4(out)} / (${n4(out)} + ${n4(v.Pi)} + ${n4(Pcu)}) = ${fx(eta,3)} %`],
+      ['Maximum efficiency (Cu loss = core loss)',`x = √(Pi / Pcu_FL) = √(${n4(v.Pi)}/${n4(PcuFL)}) = ${fx(xm,4)}  → ${fx(xm*100,1)} % of full load\nη_max = ${fx(etam,3)} %`],
+      ['Voltage regulation ('+(v.pft==='lag'?'lagging':'leading')+' pf)',`%VR = x·I₁(R_eq·cosφ ${sg>0?'+':'−'} X_eq·sinφ)/V1 × 100\n    = ${n4(v.x)}×${n4(I1)}×(${n4(Req)}×${n4(v.pf)} ${sg>0?'+':'−'} ${n4(Xeq)}×${n4(sinp)})/${n4(v.V1)} × 100 = ${fx(VR,3)} %`]]);
+    const xs=linspace(0.01,1.5,250), ef=p=>xs.map(x=>{const o=x*v.S*1000*p;return o/(o+v.Pi+x*x*PcuFL)*100;});
+    const e1=ef(1), ec=ef(v.pf), lo=Math.max(0,Math.min(...ec.slice(5))-5);
+    lineChart($('ch1'),{x:xs,series:[{y:e1,color:css('--cyan'),label:'pf = 1'},{y:ec,color:css('--amber'),label:'pf = '+fx(v.pf,2)}],xl:'Load (fraction of full load)',yl:'Efficiency (%)',ymin:lo,ymax:100,
+      vlines:[{x:xm,color:css('--green'),label:'η max'}],markers:[{x:v.x,y:eta,color:css('--pink'),label:fx(eta,2)+' %'}]});
+  },
+  theory:`EMF equation: E = 4.44·f·Φm·N,   E1/E2 = N1/N2 = I2/I1 = a
+OC test → core (iron) loss Pi;   SC test → R_eq = Psc/Isc², Z_eq = Vsc/Isc
+η = x·S·cosφ / (x·S·cosφ + Pi + x²·Pcu,FL);   η is maximum when x²·Pcu,FL = Pi
+%Regulation ≈ I(R_eq cosφ ± X_eq sinφ)/V × 100   (+ lagging, − leading)`
+});
+
+/* ---------- 7. DC machine ---------- */
+MODULES.push({
+  id:'dcmachine', grp:'Electrical Machines', ic:'DC', title:'DC Generator & Motor: EMF, Speed & Torque',
+  tag:'Module 4 · DC Machines',
+  intro:'Use the EMF equation E = PΦZN/(60A) for lap or wave windings. In generator mode set the speed to find the generated EMF and terminal voltage. In motor mode set the supply voltage to find the back EMF, speed and torque.',
+  params:[
+    {k:'mode',label:'Operating mode',type:'sel',v:'gen',opts:[['gen','Generator'],['mot','Motor']]},
+    {k:'wind',label:'Armature winding',type:'sel',v:'lap',opts:[['lap','Lap (A = P)'],['wave','Wave (A = 2)']]},
+    {k:'P',label:'Number of poles P',unit:'',min:2,max:12,step:2,v:4,hardMin:2},
+    {k:'phi',label:'Flux per pole Φ',unit:'mWb',min:1,max:100,step:0.5,v:25,hardMin:0.0001},
+    {k:'Z',label:'Armature conductors Z',unit:'',min:50,max:2000,step:10,v:500,hardMin:1},
+    {k:'Ra',label:'Armature resistance Ra',unit:'Ω',min:0.01,max:5,step:0.01,v:0.5,hardMin:0},
+    {k:'Ia',label:'Armature current Ia',unit:'A',min:0,max:200,step:0.5,v:20},
+    {k:'N',label:'Speed N',unit:'rpm',min:100,max:3000,step:10,v:1000},
+    {k:'V',label:'Supply voltage V',unit:'V',min:10,max:600,step:1,v:220},
+  ],
+  viz(){return {tabs:[],def:''};},
+  chartHtml:`<h3 id="chT"><span class="dot"></span>Characteristic</h3><div class="chartwrap"><canvas id="ch1"></canvas></div><div class="note" id="chN"></div>`,
+  update(v){
+    const api=current.api, gen=v.mode==='gen';
+    api.show('N',gen); api.show('V',!gen);
+    const A=v.wind==='lap'?v.P:2, phi=v.phi*1e-3, K=v.P*phi*v.Z/(60*A);
+    let E,Vt,N,T,rs,st,warn=false;
+    if(gen){
+      N=v.N; E=K*N; Vt=E-v.Ia*v.Ra; const w=2*PI*N/60; T=E*v.Ia/w;
+      rs=[['Parallel paths A',A],['Generated EMF Eg',eng(E,'V'),'hl'],['Terminal voltage Vt',eng(Vt,'V'),'hl'],['Armature Cu loss',eng(v.Ia**2*v.Ra,'W')],
+        ['Power developed Eg·Ia',eng(E*v.Ia,'W')],['Output power Vt·Ia',eng(Vt*v.Ia,'W')],['Driving torque',eng(T,'N·m'),'ok']];
+      st=[['Number of parallel paths',`${v.wind==='lap'?'Lap winding: A = P':'Wave winding: A = 2'} = ${A}`],
+        ['EMF equation',`Eg = P·Φ·Z·N / (60·A) = ${v.P} × ${n4(phi)} × ${v.Z} × ${n4(N)} / (60 × ${A})\n   = ${eng(E,'V')}`],
+        ['Terminal voltage (separately excited)',`Vt = Eg − Ia·Ra = ${n4(E)} − ${n4(v.Ia)}×${n4(v.Ra)} = ${eng(Vt,'V')}`],
+        ['Power and torque',`Pdev = Eg·Ia = ${eng(E*v.Ia,'W')}\nT = Pdev / ω = ${n4(E*v.Ia)} / (2π×${n4(N)}/60) = ${eng(T,'N·m')}`]];
+    } else {
+      E=v.V-v.Ia*v.Ra; warn=E<=0; N=warn?0:E/K; const w=2*PI*N/60; T=v.P*phi*v.Z*v.Ia/(2*PI*A); Vt=v.V;
+      rs=[['Parallel paths A',A],['Back EMF Eb',eng(E,'V'),warn?'warn':'hl'],['Speed N',warn?'Stalled':fx(N,1)+' rpm',warn?'warn':'hl'],['Torque T',eng(T,'N·m'),'hl'],
+        ['Input power V·Ia',eng(v.V*v.Ia,'W')],['Mechanical power Eb·Ia',eng(Math.max(0,E)*v.Ia,'W')],['Armature efficiency',fx(Math.max(0,E)/v.V*100,1)+' %','ok']];
+      st=[['Number of parallel paths',`${v.wind==='lap'?'Lap winding: A = P':'Wave winding: A = 2'} = ${A}`],
+        ['Back EMF',`Eb = V − Ia·Ra = ${n4(v.V)} − ${n4(v.Ia)}×${n4(v.Ra)} = ${eng(E,'V')}`],
+        ['Speed from EMF equation',warn?'Eb ≤ 0: the motor cannot run. Reduce Ia or Ra.':`N = 60·A·Eb / (P·Φ·Z) = 60×${A}×${n4(E)} / (${v.P}×${n4(phi)}×${v.Z}) = ${fx(N,2)} rpm`],
+        ['Torque',`T = P·Φ·Z·Ia / (2π·A) = ${v.P}×${n4(phi)}×${v.Z}×${n4(v.Ia)} / (2π×${A}) = ${eng(T,'N·m')}\n(also T = Eb·Ia/ω)`],
+        ['Power flow',`Input V·Ia = ${eng(v.V*v.Ia,'W')} → Armature Cu loss Ia²Ra = ${eng(v.Ia**2*v.Ra,'W')} → Mechanical Eb·Ia = ${eng(Math.max(0,E)*v.Ia,'W')}`]];
+    }
+    // SVG
+    let g='';
+    g+=`<path d="M210 60 A110 110 0 0 0 210 240" fill="none" stroke="var(--red)" stroke-width="14"/><path d="M390 60 A110 110 0 0 1 390 240" fill="none" stroke="var(--cyan)" stroke-width="14"/>`;
+    g+=S.txt(180,155,'N','st')+S.txt(420,155,'S','st');
+    const dur=N>0?Math.max(0.25,600/N):0;
+    g+=`<g style="transform-origin:300px 150px;${dur?`animation:spin ${dur}s linear infinite`:''}"><circle cx="300" cy="150" r="62" fill="var(--bg2)" stroke="var(--text)" stroke-width="2"/>${[0,45,90,135].map(a=>`<line x1="${300+60*Math.cos(a/DEG)}" y1="${150+60*Math.sin(a/DEG)}" x2="${300-60*Math.cos(a/DEG)}" y2="${150-60*Math.sin(a/DEG)}" stroke="var(--amber)" stroke-width="2"/>`).join('')}<circle cx="300" cy="150" r="10" fill="var(--amber)"/></g>`;
+    g+=`<rect x="290" y="78" width="20" height="10" fill="#aaa"/><rect x="290" y="212" width="20" height="10" fill="#aaa"/>`;
+    g+=S.wire([[300,78],[300,50],[480,50]])+S.res(480,50,600,50,'Ra',eng(v.Ra,'Ω'))+S.wire([[600,50],[640,50],[640,80]]);
+    g+=S.wire([[300,222],[300,270],[640,270],[640,220]]);
+    g+= gen? S.res(640,80,640,220,'Load',eng(Vt,'V'),'load',-1) : S.vs(640,80,220,'V',eng(v.V,'V'),-1);
+    g+=S.flow(gen?[[300,78],[300,50],[640,50],[640,270],[300,270],[300,222]]:[[640,80],[640,50],[300,50],[300,78]],v.Ia,Math.max(v.Ia,1));
+    g+=S.txt(300,295,(gen?'Eg = ':'Eb = ')+eng(E,'V')+'   ·   N = '+(N>0?fx(N,0):'0')+' rpm   ·   Ia = '+eng(v.Ia,'A'),'sm');
+    $('viz').innerHTML=S.svg(700,305,g);
+    $('res').innerHTML=results(rs);
+    $('steps').innerHTML=steps(st);
+    const Imax=Math.max(2*v.Ia,10), is=linspace(0,Imax,200);
+    if(gen){
+      $('chT').innerHTML='<span class="dot"></span>External characteristic: Vt vs Ia';
+      $('chN').textContent='Terminal voltage falls as load current rises because of the Ia·Ra drop (armature reaction is ignored).';
+      lineChart($('ch1'),{x:is,series:[{y:is.map(()=>E),color:css('--cyan'),label:'Eg',dash:[6,4]},{y:is.map(i=>E-i*v.Ra),color:css('--amber'),label:'Vt'}],xl:'Armature current Ia (A)',yl:'Voltage (V)',markers:[{x:v.Ia,y:Vt,color:css('--pink'),label:'operating point'}]});
+    } else {
+      $('chT').innerHTML='<span class="dot"></span>Speed characteristic: N vs Ia (constant Φ)';
+      $('chN').textContent='At constant flux the speed drops only slightly with load, so the motor runs at nearly constant speed.';
+      lineChart($('ch1'),{x:is,series:[{y:is.map(i=>Math.max(0,(v.V-i*v.Ra)/K)),color:css('--amber'),label:'N (rpm)'}],xl:'Armature current Ia (A)',yl:'Speed (rpm)',markers:[{x:v.Ia,y:N,color:css('--pink'),label:'operating point'}]});
+    }
+  },
+  theory:`EMF equation:  E = P·Φ·Z·N / (60·A)      (A = P for lap, A = 2 for wave)
+Generator: Vt = Eg − Ia·Ra          Motor: Eb = V − Ia·Ra,  N ∝ Eb/Φ
+Torque: T = P·Φ·Z·Ia / (2π·A) = 0.159·(P/A)·Φ·Z·Ia  N·m`
+});
+
+/* ---------- 8. Induction motor ---------- */
+MODULES.push({
+  id:'induction', grp:'Electrical Machines', ic:'IM', title:'Three-Phase Induction Motor: Slip & Torque',
+  tag:'Module 4 · AC Machines',
+  intro:'The rotating magnetic field turns at synchronous speed N<sub>s</sub> and the rotor turns slightly slower. Change the speed to see slip, rotor frequency, rotor current, torque and the power split. The animation is slowed down so you can see the field moving ahead of the rotor.',
+  params:[
+    {k:'f',label:'Supply frequency f',unit:'Hz',min:25,max:60,step:1,v:50},
+    {k:'P',label:'Number of poles P',unit:'',min:2,max:12,step:2,v:4,hardMin:2},
+    {k:'N',label:'Rotor speed N',unit:'rpm',min:0,max:3600,step:5,v:1440},
+    {k:'R2',label:'Rotor resistance R₂ (per phase)',unit:'Ω',min:0.01,max:2,step:0.01,v:0.2,hardMin:0.0001},
+    {k:'X2',label:'Rotor standstill reactance X₂',unit:'Ω',min:0.1,max:5,step:0.05,v:1,hardMin:0.0001},
+    {k:'E2',label:'Rotor standstill EMF E₂ (per phase)',unit:'V',min:10,max:400,step:1,v:100},
+  ],
+  viz(){return {tabs:[],def:''};},
+  chartHtml:`<h3><span class="dot"></span>Torque–speed characteristic</h3><div class="chartwrap"><canvas id="ch1"></canvas></div><div class="note">Maximum torque occurs at slip s<sub>m</sub> = R₂/X₂. Increasing R₂ shifts the peak towards standstill, which gives more starting torque.</div>`,
+  actions:[{label:'Set speed for max torque',fn(v,api){ const Ns=120*v.f/v.P, sm=Math.min(1,v.R2/v.X2); api.set('N',+(Ns*(1-sm)).toFixed(1)); }},{label:'Standstill (start)',fn(v,api){api.set('N',0);}}],
+  update(v){
+    const Ns=120*v.f/v.P, s=(Ns-v.N)/Ns, ws=2*PI*Ns/60;
+    const Tf=sl=>3/ws*sl*v.E2**2*v.R2/(v.R2**2+(sl*v.X2)**2);
+    const I2=s*v.E2/Math.hypot(v.R2,s*v.X2), T=Tf(s), Pcu=3*I2*I2*v.R2, Pg=T*ws, Pm=(1-s)*Pg;
+    const sm=v.R2/v.X2, Tmax=3/ws*v.E2**2/(2*v.X2), Tst=Tf(1);
+    const warn=s<=0;
+    $('res').innerHTML=results([
+      ['Synchronous speed Ns',fx(Ns,1)+' rpm','hl'],['Slip s',fx(s,4)+' ('+fx(s*100,2)+' %)',warn?'warn':'hl'],['Rotor frequency fr = s·f',eng(Math.abs(s*v.f),'Hz')],
+      ['Rotor current I₂',eng(Math.abs(I2),'A')],['Torque T',eng(T,'N·m'),'hl'],['Air-gap power Pg',eng(Pg,'W')],
+      ['Rotor Cu loss = s·Pg',eng(Pcu,'W')],['Mechanical power (1−s)·Pg',eng(Pm,'W')],
+      ['Max torque Tmax',eng(Tmax,'N·m'),'ok'],['Slip at Tmax',fx(sm,3),'ok'],['Starting torque',eng(Tst,'N·m'),'ok']]);
+    $('steps').innerHTML=steps([
+      ['Synchronous speed',`Ns = 120·f / P = 120 × ${n4(v.f)} / ${v.P} = ${fx(Ns,2)} rpm`],
+      ['Slip',`s = (Ns − N)/Ns = (${fx(Ns,1)} − ${n4(v.N)})/${fx(Ns,1)} = ${fx(s,4)}`+(warn?'\n⚠ N ≥ Ns: no torque is produced (s ≤ 0 means generating mode).':'')],
+      ['Rotor quantities under running conditions',`fr = s·f = ${eng(s*v.f,'Hz')}\nE₂r = s·E₂ = ${eng(s*v.E2,'V')},  X₂r = s·X₂ = ${eng(s*v.X2,'Ω')}\nI₂ = sE₂ / √(R₂² + (sX₂)²) = ${eng(I2,'A')}`],
+      ['Torque (3-phase)',`T = (3/ωs) · s·E₂²·R₂ / (R₂² + (sX₂)²),   ωs = 2πNs/60 = ${n4(ws)} rad/s\nT = ${eng(T,'N·m')}`],
+      ['Power flow in the rotor',`Pg : Pcu₂ : Pm = 1 : s : (1 − s)\nPg = ${eng(Pg,'W')},  Pcu₂ = ${eng(Pcu,'W')},  Pm = ${eng(Pm,'W')}`],
+      ['Maximum torque',`s_m = R₂/X₂ = ${fx(sm,4)} → N = ${fx(Ns*(1-sm),1)} rpm\nTmax = (3/ωs)·E₂²/(2X₂) = ${eng(Tmax,'N·m')}  (independent of R₂)`]]);
+    // animated svg
+    const cx=200,cy=150;
+    let g=`<circle cx="${cx}" cy="${cy}" r="125" fill="none" stroke="#5a6a95" stroke-width="16"/>`;
+    for(let i=0;i<24;i++){const a=i*15/DEG;g+=`<line x1="${cx+117*Math.cos(a)}" y1="${cy+117*Math.sin(a)}" x2="${cx+133*Math.cos(a)}" y2="${cy+133*Math.sin(a)}" stroke="#0b1020" stroke-width="3"/>`;}
+    g+=`<circle cx="${cx}" cy="${cy}" r="80" fill="var(--bg2)" stroke="var(--text)" stroke-width="2"/>`;
+    g+=`<g id="fieldG">${S.arrow(cx,cy,cx+108,cy,css('--cyan'),4,'')}<text class="sc" x="${cx+60}" y="${cy-8}" text-anchor="middle">B (Ns)</text></g>`;
+    g+=`<g id="rotorG">${Array.from({length:8},(_,i)=>{const a=i*45/DEG;return `<circle cx="${cx+66*Math.cos(a)}" cy="${cy+66*Math.sin(a)}" r="6" fill="${i===0?'var(--amber)':'#5a6a95'}"/>`;}).join('')}<line x1="${cx}" y1="${cy}" x2="${cx+56}" y2="${cy}" stroke="var(--amber)" stroke-width="3"/></g>`;
+    g+=`<circle cx="${cx}" cy="${cy}" r="8" fill="var(--amber)"/>`;
+    g+=S.txt(400,70,'Stator field: Ns = '+fx(Ns,0)+' rpm','sc','start')+S.txt(400,95,'Rotor: N = '+fx(v.N,0)+' rpm','sv','start')+S.txt(400,120,'Slip s = '+fx(s*100,2)+' %','sg','start');
+    g+=S.txt(400,160,'Relative speed (Ns − N) = '+fx(Ns-v.N,0)+' rpm','sm','start')+S.txt(400,182,'The rotor "slips" behind the field;','sm','start')+S.txt(400,200,'this relative motion induces','sm','start')+S.txt(400,218,'the rotor current.','sm','start')+S.txt(400,250,'(animation slowed ×60)','sm','start');
+    $('viz').innerHTML=S.svg(700,300,g);
+    cancelAnimationFrame(animId); let af=0,ar=0,last=performance.now();
+    const fG=$('fieldG'),rG=$('rotorG');
+    const tick=t=>{const dt=(t-last)/1000;last=t; af+=Ns/60*360/60*dt; ar+=v.N/60*360/60*dt; if(fG){fG.setAttribute('transform',`rotate(${af%360} ${cx} ${cy})`);rG.setAttribute('transform',`rotate(${ar%360} ${cx} ${cy})`);} animId=requestAnimationFrame(tick);};
+    animId=requestAnimationFrame(tick);
+    const ns=linspace(0,Ns*0.9999,300);
+    lineChart($('ch1'),{x:ns,series:[{y:ns.map(n=>Tf((Ns-n)/Ns)),color:css('--amber'),label:'Torque (N·m)'}],xl:'Rotor speed N (rpm)   [s = 1 at left, s = 0 at Ns]',yl:'Torque (N·m)',
+      markers:[{x:Ns*(1-Math.min(1,sm)),y:Tf(Math.min(1,sm)),color:css('--green'),label:'Tmax'},{x:Math.min(v.N,Ns*0.9999),y:warn?0:T,color:css('--pink'),label:'operating point'}]});
+  },
+  theory:`Ns = 120 f / P,   s = (Ns − N)/Ns,   fr = s·f
+T = (3/ωs) · s E₂² R₂ / (R₂² + (s X₂)²)
+Tmax at s_m = R₂/X₂;   Tmax = (3/ωs) · E₂² / (2 X₂)
+Pg : Rotor Cu loss : Pm = 1 : s : (1 − s)`
+});
+
+/* ====================== Home & routing ====================== */
+const DESC={thevenin:'Find Vth, Rth and IN for any values, and see where maximum power transfer occurs on a live curve.',
+mesh:'Solve a two-source network with KCL, KVL and superposition, and check that all three agree.',
+stardelta:'Convert Δ ↔ Y networks and verify that the terminal resistances are equal.',
+rlc:'Reactance, impedance, power factor, phasor diagram and the resonance curve.',
+threephase:'Star and delta loads, line and phase values, three-phase power and the two-wattmeter method.',
+transformer:'OC/SC tests, equivalent circuit, efficiency, maximum efficiency and voltage regulation.',
+dcmachine:'EMF equation for lap and wave windings, terminal voltage, back EMF, speed and torque.',
+induction:'Synchronous speed, slip, rotor frequency and the torque–slip characteristic, with an animated field.'};
+function home(){
+  cancelAnimationFrame(animId);
+  let name='Your Name', roll='Roll No.', inst='Institute / Department';
+  try{ const d=JSON.parse(localStorage.getItem('bee-meta')||'{}'); name=d.name||name; roll=d.roll||roll; inst=d.inst||inst; }catch(e){}
+  $('view').innerHTML=`
+  <div class="hero">
+    <div class="mhead" style="margin:0"><div><div class="tag" style="color:var(--amber);font-family:var(--mono);font-size:12px;letter-spacing:1px">CAPSTONE PROJECT · BASIC ELECTRICAL ENGINEERING</div></div></div>
+    <h1 style="margin-top:10px">BEE <em>Virtual Lab</em>: an interactive simulator for circuits & machines</h1>
+    <p>Eight live simulators covering the BEE syllabus: DC network theorems, AC circuits, three-phase systems, transformers and electrical machines. Change any parameter and the circuit diagram, results, step-by-step solution and graphs all update instantly.</p>
+    <div class="meta"><div><span>Presented by: </span><b contenteditable="true" id="mName">${name}</b></div><div><span>Roll: </span><b contenteditable="true" id="mRoll">${roll}</b></div><div><span></span><b contenteditable="true" id="mInst">${inst}</b></div></div>
+    <div class="btns" style="margin-top:20px"><button class="btn pri" onclick="go('thevenin')">Start with Thevenin's theorem →</button></div>
+    <svg class="wave" viewBox="0 0 420 160"><path d="${Array.from({length:211},(_,i)=>`${i?'L':'M'}${i*2} ${80-55*Math.sin(i/14)}`).join(' ')}" fill="none" stroke="#ffb84d" stroke-width="2"/><path d="${Array.from({length:211},(_,i)=>`${i?'L':'M'}${i*2} ${80-55*Math.sin(i/14-2.09)}`).join(' ')}" fill="none" stroke="#4fd1e8" stroke-width="2"/><path d="${Array.from({length:211},(_,i)=>`${i?'L':'M'}${i*2} ${80-55*Math.sin(i/14-4.19)}`).join(' ')}" fill="none" stroke="#ff6b9a" stroke-width="2"/></svg>
+  </div>
+  <div class="mcards">${MODULES.map((m,i)=>`<div class="mc" onclick="go('${m.id}')"><div class="k">${String(i+1).padStart(2,'0')} · ${m.grp}</div><h3>${m.title}</h3><p>${DESC[m.id]}</p></div>`).join('')}</div>
+  <div class="card" style="margin-top:20px"><h3><span class="dot"></span>Features</h3>
+  <div class="feat" style="margin-top:4px">
+    <div><b>Live circuit diagrams</b><span>Animated current flow; the dot speed and direction follow the actual current.</span></div>
+    <div><b>Step-by-step solutions</b><span>Every answer is worked out with the formula and the numbers substituted in, just as you would write it in an exam.</span></div>
+    <div><b>Interactive graphs</b><span>Power transfer curve, resonance curve, efficiency curve, torque–slip curve and more.</span></div>
+    <div><b>Verification</b><span>Power balance, star–delta equivalence and W1 + W2 = P checks confirm that the results are correct.</span></div>
+    <div><b>No installation</b><span>Pure HTML, CSS and JavaScript with no external libraries. Works in any browser, on desktop or phone.</span></div>
+  </div></div>`;
+  const save=()=>{ try{ localStorage.setItem('bee-meta',JSON.stringify({name:$('mName').textContent,roll:$('mRoll').textContent,inst:$('mInst').textContent})); }catch(e){} };
+  ['mName','mRoll','mInst'].forEach(id=>$(id).addEventListener('input',save));
+}
+function renderModule(m){
+  cancelAnimationFrame(animId);
+  const vz=m.viz();
+  $('view').innerHTML=`
+  <div class="mhead"><div><div class="tag">${m.tag}</div><h2>${m.title}</h2><p>${m.intro}</p></div></div>
+  <div class="g-top">
+    <div class="card"><h3><span class="dot"></span>Parameters</h3><div class="ctl" id="ctl"></div>
+      <div class="btns" style="margin-top:14px">${(m.actions||[]).map((a,i)=>`<button class="btn pri" data-a="${i}">${a.label}</button>`).join('')}<button class="btn" id="rst">Reset values</button></div></div>
+    <div class="card viz"><div class="vizhead"><h3 style="margin:0"><span class="dot"></span>Circuit</h3>${vz.tabs.length?tabsHtml('vt',vz.tabs,vz.def):''}</div><div id="viz"></div></div>
+  </div>
+  <div class="card"><h3><span class="dot"></span>Results</h3><div class="results" id="res"></div></div>
+  <div class="g-bot">
+    <div class="card"><h3><span class="dot"></span>Step-by-step solution</h3><div id="steps"></div></div>
+    <div class="card">${m.chartHtml}</div>
+  </div>
+  <details class="card theory" open><summary>Key formulas</summary><div class="f">${m.theory}</div></details>`;
+  let view=vz.def;
+  const defs=m.params.map(p=>({...p}));
+  const upd=()=>{ try{ m.update(api.vals,view); }catch(e){ console.error(e); } };
+  const api=buildControls($('ctl'),defs,upd);
+  current={m,api,rerender:upd};
+  bindTabs('vt',k=>{view=k;upd();});
+  document.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{ m.actions[+b.dataset.a].fn(api.vals,api); upd(); });
+  $('rst').onclick=()=>renderModule(m);
+  upd();
+}
+function buildNav(){
+  let h=`<div class="brand" onclick="go('home')"><div class="logo">⚡</div><div><b>BEE Virtual Lab</b><small>Interactive simulator</small></div></div>`;
+  h+=`<a class="navlink" data-id="home" onclick="go('home')"><span class="ic">⌂</span>Home</a>`;
+  let grp='';
+  MODULES.forEach(m=>{ if(m.grp!==grp){grp=m.grp;h+=`<div class="navgrp">${grp}</div>`;} h+=`<a class="navlink" data-id="${m.id}" onclick="go('${m.id}')"><span class="ic">${m.ic}</span>${m.title.split(':')[0].replace(' & Max Power Transfer',' & MPT').replace(' & Two-Wattmeter Method','')}</a>`; });
+  $('side').innerHTML=h;
+}
+function go(id){ if(location.hash.slice(1)!==id){ location.hash=id; } else route(); $('side').classList.remove('open'); }
+function route(){
+  const id=location.hash.slice(1)||'home';
+  document.querySelectorAll('.navlink').forEach(a=>a.classList.toggle('on',a.dataset.id===id));
+  const m=MODULES.find(x=>x.id===id);
+  if(m) renderModule(m); else { current=null; home(); }
+  window.scrollTo(0,0);
+}
+window.addEventListener('hashchange',route);
+let rt; window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{ if(current) current.rerender(); },120);});
+$('menuBtn').onclick=()=>$('side').classList.toggle('open');
+buildNav(); route();
+</script>
+</body>
+</html>
